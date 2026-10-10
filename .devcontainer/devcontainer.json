@@ -1,0 +1,16 @@
+{
+  "name": "AI Agent Simulator",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:1-10.0-noble",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4
+      }
+    }
+  },
+  "postCreateCommand": "dotnet --info"
+}
