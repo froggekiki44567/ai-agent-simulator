@@ -130,12 +130,12 @@ Use the latest stable versions and pin them in `Directory.Packages.props`.
 | NATS client | `NATS.Net` (v2) + `Aspire.NATS.Net` |
 | Database | `Npgsql.EntityFrameworkCore.PostgreSQL`, `Pgvector.EntityFrameworkCore`, image `pgvector/pgvector:pg17` |
 | LLM | `OllamaSharp` (or `Microsoft.Extensions.AI` via OllamaSharp) |
-| Models | A 7–8B instruct model for decisions (e.g. `qwen2.5:7b-instruct`), `nomic-embed-text` for embeddings |
+| Models | `qwen2.5:1.5b-instruct` on CPU in Codespaces for development, `qwen2.5:7b-instruct` on the Mac for the demo (model name from config `Llm:Model`), `nomic-embed-text` for embeddings |
 | UI | Blazor Web App (Interactive Server), SignalR, HTML canvas via JS interop |
 | Tests | xUnit, FluentAssertions (or Shouldly), NSubstitute, Testcontainers |
 | Observability | OpenTelemetry via ServiceDefaults, Aspire dashboard |
 
-**Dev container note:** the dev container is locked down for AI agents (see `docs/decisions/ADR-001-secured-dev-container.md`): no Docker socket, outbound firewall, no general sudo. NATS and Postgres run as sibling Docker Compose services, and inside the dev container the AppHost references them with `AddConnectionString(...)` (snippet in `README.md`). Ollama runs with GPU **on the host** and is reached via `host.docker.internal`.
+**Dev container note:** the dev container is locked down for AI agents (see `docs/decisions/ADR-001-secured-dev-container.md`): no Docker socket, outbound firewall, no general sudo. We develop in **GitHub Codespaces**. NATS, Postgres and Ollama (CPU, small model) run as sibling Docker Compose services, and inside the dev container the AppHost references them with `AddConnectionString(...)` (snippet in `README.md`). For the defense demo the same setup runs locally on the Mac with native Ollama and a 7B model.
 
 ### 2.3 Simulation time
 
@@ -269,14 +269,16 @@ If the JSON doesn't parse, the action doesn't exist, or there is no response wit
 
 ## 6. Dev environment
 
-1. Install Docker Desktop, VS Code and the Dev Containers extension.
-2. Install Ollama **on the host** and run: `ollama pull qwen2.5:7b-instruct` and `ollama pull nomic-embed-text`.
-3. Open the repo → "Reopen in Container". NATS and Postgres start automatically as compose services; the firewall starts on every container start.
-4. Sign in once inside the container: `claude`, then `codex`.
-5. Run `dotnet run --project src/AgentTown.AppHost` and open the Aspire dashboard link from the console.
-6. If only one of you has a GPU, that person runs Ollama and shares it over LAN or Tailscale. As a last resort, use a cheap API (only the `ILlmClient` implementation changes).
+We work in **GitHub Codespaces**. Full instructions are in `README.md`; the short version:
 
-The dev container setup is already in `.devcontainer/` (Dockerfile, docker-compose.yml, firewall, allowlist). New outbound domains go into `.devcontainer/allowed-domains.txt` and need a rebuild. Don't add docker-in-docker or the Docker socket.
+1. On GitHub: Code → Codespaces → New with options → **2-core** for normal work, **4-core** for LLM-heavy days.
+2. The first build starts NATS, Postgres and Ollama and pulls `qwen2.5:1.5b-instruct` + `nomic-embed-text`.
+3. Sign in once in the terminal: `claude`, then `codex`.
+4. Run `dotnet run --project src/AgentTown.AppHost` and open the forwarded Aspire dashboard port.
+5. **Budget:** 180 core-hours per person per month (students). Set the idle timeout to 15 min, stop the codespace after each session, and use `FakeLlmClient` in tests so you rarely need the LLM.
+6. **Demo machine:** the Mac runs the same `.devcontainer/` in Docker Desktop with native Ollama and `qwen2.5:7b-instruct` (set in `.devcontainer/.env`). Test this setup at least once before Week 6.
+
+The dev container is locked down (ADR-001). New outbound domains go into `.devcontainer/allowed-domains.txt` and need a rebuild. Don't add docker-in-docker or the Docker socket.
 
 ---
 
@@ -296,11 +298,11 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 - [ ] Create `AgentTown.sln` and all `src/` and `tests/` projects from 2.1 (empty for now). Commit the generated `packages.lock.json` files.
 
 **B (Colleague)** (start once A has pushed the solution)
-- [ ] Open the repo in the dev container and check: the firewall log says "Firewall active", `curl https://example.com` fails, `dotnet restore` works.
-- [ ] Check that NATS and Postgres are reachable from the dev container (`nats:4222`, `postgres:5432`) and that Ollama on the host answers at `http://host.docker.internal:11434`.
+- [ ] Create a codespace, set the idle timeout to 15 min, and check: the firewall log says "Firewall active", `curl https://example.com` fails, `dotnet restore` works.
+- [ ] Check that NATS, Postgres and Ollama are reachable from the codespace (`nats:4222`, `postgres:5432`, `curl http://ollama:11434/api/tags` lists both models).
 - [ ] Sign in to `claude` and `codex` inside the container and check that Claude Code refuses to read `.env` (`.claude/settings.json`).
 
-**Done when:** both can open the repo in the dev container and `dotnet build` passes.
+**Done when:** both have a working codespace and `dotnet build` passes.
 
 #### Day 2 – Thu 11-05
 **A**
@@ -436,7 +438,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 #### Day 13 – Fri 11-20 (integration)
 **Both**
 - [ ] B: conversation bubbles above agents (3–5 s), `AgentThought` shown on hover.
-- [ ] A: tune the prompts so decisions are varied and sensible; measure how many LLM calls per minute the GPU can handle.
+- [ ] A: tune the prompts so decisions are varied and sensible; measure LLM calls per minute in the codespace (1.5B, CPU) **and** on the Mac (7B) and set `Llm:MaxCallsPerTick` per environment.
 - [ ] Both: run 20 agents with the LLM, watch in the browser for 15 minutes, fix bugs.
 
 **🚦 G2:** agents move in the browser, conversations and thoughts are visible, LLM fallbacks < 10%.
@@ -488,7 +490,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 18 – Fri 11-27 (integration)
 **Both**
-- [ ] Scale up to 50 agents (extend `agents.json`). Watch CPU, the LLM queue and UI speed.
+- [ ] Scale up to 50 agents (extend `agents.json`). Watch CPU, the LLM queue and UI speed – on the Mac, since the codespace CPU is too slow for 50 LLM agents.
 - [ ] A: tune `MaxCallsPerTick` and the detector so the UI stays lively without the queue growing.
 - [ ] B: optimize canvas and SignalR if 50 agents cause lag.
 - [ ] Both: update `docs/architecture.md`.
@@ -605,12 +607,12 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 #### Day 30 – Tue 12-15
 - [ ] Step-by-step demo script (5–7 min): startup → map → agent panel → conversation → inject "Bank collapse" → reactions → statistics → AML tab with precision/recall → Aspire dashboard.
 - [ ] 2 timed rehearsals.
-- [ ] **Backup video** (5 min) in case the GPU or network fails during the defense.
+- [ ] **Backup video** (5 min) in case the Mac or the LLM fails during the defense.
 
 #### Day 31 – Wed 12-16
 - [ ] Final rehearsal.
 - [ ] Likely questions and answers (see section 9).
-- [ ] Check that the laptop runs everything offline (models downloaded, images pulled).
+- [ ] Check that the Mac runs everything locally without the internet (Docker images pulled, Ollama models downloaded). Codespaces need internet – don't rely on them during the defense.
 
 ---
 
