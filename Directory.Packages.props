@@ -1,0 +1,12 @@
+<Project>
+  <!-- Central Package Management: all versions live here, csproj files use <PackageReference Include="X" /> without Version. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Add packages here as projects need them, e.g.:
+    <PackageVersion Include="NATS.Net" Version="x.y.z" />
+    -->
+  </ItemGroup>
+</Project>
