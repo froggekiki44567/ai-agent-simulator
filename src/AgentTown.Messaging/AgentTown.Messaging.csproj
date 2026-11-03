@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="NATS.Net" />
+    <PackageReference Include="Aspire.NATS.Net" />
+    <ProjectReference Include="..\AgentTown.Contracts\AgentTown.Contracts.csproj" />
+  </ItemGroup>
+</Project>
