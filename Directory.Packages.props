@@ -1,14 +1,15 @@
 <Project>
+  <!-- Check for newer versions in the dev container with: dotnet list package (outdated option) -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup Label="Aspire">
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.3.1" />
-    <PackageVersion Include="Aspire.Hosting.Nats" Version="9.3.1" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.3.1" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.0" />
+    <PackageVersion Include="Aspire.Hosting.Nats" Version="13.4.0" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.0" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="9.3.1" />
-    <PackageVersion Include="Aspire.NATS.Net" Version="9.3.1" />
+    <PackageVersion Include="Aspire.NATS.Net" Version="13.4.0" />
   </ItemGroup>
 
   <ItemGroup Label="NATS">
@@ -16,9 +17,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Database">
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.2.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup Label="LLM">

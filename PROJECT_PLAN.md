@@ -83,7 +83,11 @@ AgentTown/
 ├── AgentTown.sln
 ├── Directory.Build.props          # net10.0, Nullable, TreatWarningsAsErrors
 ├── Directory.Packages.props       # Central Package Management
-├── .devcontainer/devcontainer.json
+├── global.json                    # pins the .NET SDK
+├── nuget.config                   # nuget.org only + package source mapping
+├── .devcontainer/                 # Dockerfile, docker-compose.yml, firewall, allowlist
+├── .claude/settings.json          # Claude Code permissions (shared)
+├── .github/                       # CI, Dependabot, CODEOWNERS, PR template
 ├── docs/
 │   ├── architecture.md
 │   ├── progress.md
@@ -113,7 +117,7 @@ AgentTown/
     ├── AgentTown.Llm.Tests/       (A)
     ├── AgentTown.Aml.Tests/       (A)
     ├── AgentTown.Api.Tests/       (B)
-    └── AgentTown.IntegrationTests/ (both; Testcontainers: NATS + Postgres)
+    └── AgentTown.IntegrationTests/ (both; compose services in dev container, Testcontainers in CI)
 ```
 
 ### 2.2 Technologies and packages
@@ -126,12 +130,12 @@ Use the latest stable versions and pin them in `Directory.Packages.props`.
 | NATS client | `NATS.Net` (v2) + `Aspire.NATS.Net` |
 | Database | `Npgsql.EntityFrameworkCore.PostgreSQL`, `Pgvector.EntityFrameworkCore`, image `pgvector/pgvector:pg17` |
 | LLM | `OllamaSharp` (or `Microsoft.Extensions.AI` via OllamaSharp) |
-| Models | A 7–8B instruct model for decisions (e.g. `qwen2.5:7b-instruct`), `nomic-embed-text` for embeddings |
+| Models | `qwen2.5:7b-instruct` (or `qwen2.5:3b-instruct` on a weaker machine; from config `Llm:Model`), `nomic-embed-text` for embeddings |
 | UI | Blazor Web App (Interactive Server), SignalR, HTML canvas via JS interop |
 | Tests | xUnit, FluentAssertions (or Shouldly), NSubstitute, Testcontainers |
 | Observability | OpenTelemetry via ServiceDefaults, Aspire dashboard |
 
-**Dev container note:** Aspire runs NATS and Postgres as Docker containers, so `devcontainer.json` needs the `docker-in-docker` (or `docker-outside-of-docker`) feature. It's better to run Ollama with GPU **on the host** and connect via a connection string, because passing a GPU into a dev container is complicated.
+**Dev container note:** the dev container is locked down for AI agents (see `docs/decisions/ADR-001-secured-dev-container.md`): no Docker socket, outbound firewall, no general sudo. We develop **locally with Docker Desktop**. NATS and Postgres run as sibling Docker Compose services, and inside the dev container the AppHost references them with `AddConnectionString(...)` (snippet in `README.md`). Ollama runs **natively on each person's computer** (GPU / Apple Silicon) and is reached via `host.docker.internal`.
 
 ### 2.3 Simulation time
 
@@ -240,7 +244,7 @@ If the JSON doesn't parse, the action doesn't exist, or there is no response wit
 
 | Phase | Dates | Outcome | Gate |
 |---|---|---|---|
-| 1. Foundation | 11-04 – 11-06 | Repo, solution, Aspire, NATS, Postgres, contracts, ticks | **G0:** everything green in the Aspire dashboard, ticks visible in Agents logs |
+| 1. Foundation | 11-04 – 11-06 | Repo, secured dev container, solution, Aspire, NATS, Postgres, contracts, ticks | **G0:** AppHost runs in the dev container, ticks visible in Agents logs |
 | 2. World without LLM | 11-09 – 11-13 | Map, movement, work, money, buying, rule-based agents | **G1:** 20 agents live through 1 simulation day without errors (logs + DB) |
 | 3. LLM + UI | 11-16 – 11-20 | Ollama decisions, conversations, live map in the browser | **G2:** agents move in the browser, conversation bubbles visible |
 | 4. Economy + memory | 11-23 – 11-27 | Dynamic prices, bank, pgvector memory, relationships, agent panel | **G3:** an agent remembers yesterday's conversation and it shows in its decision |
@@ -265,13 +269,16 @@ If the JSON doesn't parse, the action doesn't exist, or there is no response wit
 
 ## 6. Dev environment
 
-1. Install Docker Desktop, VS Code and the Dev Containers extension.
-2. Install Ollama **on the host** and run: `ollama pull qwen2.5:7b-instruct` and `ollama pull nomic-embed-text`.
-3. Open the repo → "Reopen in Container".
-4. Run `dotnet run --project src/AgentTown.AppHost` and open the Aspire dashboard link from the console.
-5. If only one of you has a GPU, that person runs Ollama and shares it over LAN or Tailscale. As a last resort, use a cheap API (only the `ILlmClient` implementation changes).
+We work **locally with Docker Desktop**. Full instructions are in `README.md`; the short version:
 
-`devcontainer.json` must include: the .NET 10 image, Node (for the Claude Code and Codex CLIs), the `docker-in-docker` feature, and the extensions `ms-dotnettools.csdevkit`, `anthropic.claude-code`, `openai.chatgpt`.
+1. Install Docker Desktop, VS Code and the Dev Containers extension.
+2. Install Ollama **natively on your computer** and run `ollama pull qwen2.5:7b-instruct` and `ollama pull nomic-embed-text` (weaker machine: `qwen2.5:3b-instruct` + `LLM_MODEL` in `.devcontainer/.env`).
+3. Open the repo → "Reopen in Container". NATS and Postgres start as compose services; the firewall starts on every container start.
+4. Sign in once **inside the container**: `claude`, then `codex`. Never run them in the computer's own terminal.
+5. Run `dotnet run --project src/AgentTown.AppHost` and open the Aspire dashboard link from the console.
+6. If only one of you has a strong machine, the other can point `OLLAMA_CONNECTION` at it over the LAN (add its IP to the allowlist). Most tests use `FakeLlmClient` anyway.
+
+The dev container is locked down (ADR-001). New outbound domains go into `.devcontainer/allowed-domains.txt` and need a rebuild. Don't add docker-in-docker or the Docker socket.
 
 ---
 
@@ -286,32 +293,31 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 1 – Wed 11-04
 **A (Ervis)**
-- [ ] Create the GitHub repo `AgentTown`, protect `main` (PR + 1 review), add the colleague.
-- [ ] Create `AgentTown.sln` and all `src/` and `tests/` projects from 2.1 (empty for now).
-- [ ] `Directory.Build.props` (net10.0, Nullable enable, ImplicitUsings, TreatWarningsAsErrors) and `Directory.Packages.props`.
-- [ ] `.gitignore`, `.editorconfig`, `README.md` (2 sentences + how to run).
-- [ ] Commit this `PROJECT_PLAN.md`, `AGENTS.md` (`Read PROJECT_PLAN.md before anything else`) and `CLAUDE.md` (`@AGENTS.md`).
+- [ ] Create the GitHub repo `AgentTown`, add the colleague, commit the starter files (`.devcontainer/`, `.github/`, `.claude/`, `docs/`, root config files, this plan).
+- [ ] Do the "One-time GitHub settings" checklist from `README.md` (branch protection, secret scanning, Dependabot, CODEOWNERS usernames).
+- [x] Create `AgentTown.sln` and all `src/` and `tests/` projects from 2.1 (empty for now).
+- [ ] Run `dotnet restore` once in the dev container and commit the generated `packages.lock.json` files (CI restores in locked mode).
 
 **B (Colleague)** (start once A has pushed the solution)
-- [ ] `.devcontainer/devcontainer.json`: dotnet 10 image, Node, Claude Code, Codex, `docker-in-docker`, extensions.
-- [ ] Check that `docker ps` and `dotnet --info` work inside the container.
-- [ ] Create the `docs/` structure: `progress.md`, `decisions/`, `handoff/ervis.md`, `handoff/colleague.md`, `prompts/`.
+- [ ] Open the repo in the dev container and check: the firewall log says "Firewall active", `curl https://example.com` fails, `dotnet restore` works.
+- [ ] Check that NATS and Postgres are reachable (`nats:4222`, `postgres:5432`) and that Ollama on the computer answers: `curl http://host.docker.internal:11434/api/tags` lists both models.
+- [ ] Sign in to `claude` and `codex` inside the container and check that Claude Code refuses to read `.env` (`.claude/settings.json`).
 
 **Done when:** both can open the repo in the dev container and `dotnet build` passes.
 
 #### Day 2 – Thu 11-05
 **A**
 - [ ] `AgentTown.Contracts`: `Envelope<T>`, all records from 2.4 and 2.5, the `Subjects` constants class.
-- [ ] `ADR-001-agents-propose-world-decides.md`: why World is the single owner of state.
-- [ ] `ADR-002-llm-only-for-interesting-moments.md`.
+- [ ] `ADR-002-agents-propose-world-decides.md`: why World is the single owner of state.
+- [ ] `ADR-003-llm-only-for-interesting-moments.md`.
 - [ ] Unit test: all records serialize and deserialize with `System.Text.Json`.
 
 **B**
-- [ ] `AgentTown.AppHost`: add NATS (with JetStream), PostgreSQL (`pgvector/pgvector:pg17` image), Ollama (external connection string or the CommunityToolkit integration).
+- [ ] `AgentTown.AppHost`: in the dev container use `AddConnectionString("nats" / "townDb" / "ollama")`; outside it use `AddNats().WithJetStream()` and `AddPostgres()` with the `pgvector/pgvector:pg17` image (snippet in `README.md`).
 - [ ] `AgentTown.ServiceDefaults`: OpenTelemetry, health checks, service discovery.
 - [ ] `AgentTown.Messaging`: `INatsBus` with `PublishAsync<T>(subject, payload)` and `SubscribeAsync<T>(subject, handler, durableName)`. Creates the `TOWN` stream on startup.
 
-**Done when:** the AppHost starts and the Aspire dashboard shows NATS and Postgres green.
+**Done when:** the AppHost starts inside the dev container and the services connect to NATS and Postgres.
 
 #### Day 3 – Fri 11-06
 **A**
@@ -324,7 +330,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 - [ ] `AgentTown.Persistence`: `TownDbContext`, entities from 2.5 (without Memories and Relationships), first migration, automatic migration on startup in Development.
 - [ ] `seed/map.json`: 40×30 grid, about 15 buildings (8 homes, bakery, shop, cafe, bank, factory, town hall, park).
 
-**🚦 G0:** everything green in the Aspire dashboard, `Tick 1, 2, 3...` visible in the Agents logs.
+**🚦 G0:** the AppHost runs in the dev container, `Tick 1, 2, 3...` visible in the Agents logs in the Aspire dashboard.
 **Friday call:** review the contracts together. This is the last point where they can be changed freely.
 
 ---
@@ -379,8 +385,8 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 **Both**
 - [ ] Run 20 agents for one simulation day (at x4 speed). Review logs and Aspire traces.
 - [ ] Fix any bugs found (each in their own area).
-- [ ] B: `IntegrationTests` project with Testcontainers (NATS + Postgres) and one test: "an agent walks to the bakery and buys bread".
-- [ ] A: `docs/prompts/session-start.md` and `session-end.md` (the rules from section 0 written as prompts).
+- [ ] B: `IntegrationTests` project and one test: "an agent walks to the bakery and buys bread". A shared test fixture uses the compose NATS/Postgres when `DEVCONTAINER=true` (no Docker inside the dev container) and Testcontainers otherwise (CI).
+- [ ] A: try the prompts in `docs/prompts/` for a real session and adjust them.
 
 **🚦 G1:** 20 agents live through a day, transactions visible in the DB, no unhandled exceptions.
 
@@ -433,7 +439,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 #### Day 13 – Fri 11-20 (integration)
 **Both**
 - [ ] B: conversation bubbles above agents (3–5 s), `AgentThought` shown on hover.
-- [ ] A: tune the prompts so decisions are varied and sensible; measure how many LLM calls per minute the GPU can handle.
+- [ ] A: tune the prompts so decisions are varied and sensible; measure how many LLM calls per minute each person's computer handles and set `Llm:MaxCallsPerTick` accordingly.
 - [ ] Both: run 20 agents with the LLM, watch in the browser for 15 minutes, fix bugs.
 
 **🚦 G2:** agents move in the browser, conversations and thoughts are visible, LLM fallbacks < 10%.
@@ -485,7 +491,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 18 – Fri 11-27 (integration)
 **Both**
-- [ ] Scale up to 50 agents (extend `agents.json`). Watch CPU, the LLM queue and UI speed.
+- [ ] Scale up to 50 agents (extend `agents.json`). Watch CPU, the LLM queue and UI speed
 - [ ] A: tune `MaxCallsPerTick` and the detector so the UI stays lively without the queue growing.
 - [ ] B: optimize canvas and SignalR if 50 agents cause lag.
 - [ ] Both: update `docs/architecture.md`.
@@ -510,7 +516,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 **A**
 - [ ] `AgentTown.Aml` Worker: subscribes to `TransactionCompleted` and builds a ledger with the fields AML needs: amounts, frequency, counterparties, timing.
 - [ ] Label schema: `AmlLabel` = `None | Structuring | Smurfing | ShellCompany | RoundTripping`, plus `ScenarioId`.
-- [ ] ADR-003: how AML data is generated and labeled.
+- [ ] ADR-004: how AML data is generated and labeled.
 
 **B**
 - [ ] Each event's effect in the World rules: collapse = deposits lost or frozen; rival = new building and price cuts; price x2 = price modifier; fire = factory closed for N hours; festival = agents drawn to the park.
@@ -560,8 +566,8 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 25 – Tue 12-08
 **A**
-- [ ] Integration test: Testcontainers + `FakeLlmClient`, 10 agents, 1 day. Asserts that every agent has memories, there are transactions and AML labels exist.
-- [ ] GitHub Actions CI: `dotnet build` + `dotnet test` (integration tests with Docker).
+- [ ] Integration test (shared fixture from Day 8) + `FakeLlmClient`, 10 agents, 1 day. Asserts that every agent has memories, there are transactions and AML labels exist.
+- [ ] Make sure CI (`.github/workflows/ci.yml`) also runs the integration tests (Testcontainers works on GitHub runners).
 
 **B**
 - [ ] UI polish: loading and error states, SignalR reconnect, dark mode (optional), clean fonts and colors.
@@ -602,12 +608,12 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 #### Day 30 – Tue 12-15
 - [ ] Step-by-step demo script (5–7 min): startup → map → agent panel → conversation → inject "Bank collapse" → reactions → statistics → AML tab with precision/recall → Aspire dashboard.
 - [ ] 2 timed rehearsals.
-- [ ] **Backup video** (5 min) in case the GPU or network fails during the defense.
+- [ ] **Backup video** (5 min) in case the laptop or the LLM fails during the defense.
 
 #### Day 31 – Wed 12-16
 - [ ] Final rehearsal.
 - [ ] Likely questions and answers (see section 9).
-- [ ] Check that the laptop runs everything offline (models downloaded, images pulled).
+- [ ] Check that the demo laptop runs everything without the internet (Docker images pulled, Ollama models downloaded).
 
 ---
 

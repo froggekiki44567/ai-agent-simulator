@@ -55,3 +55,23 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# --- Added: secrets (never commit) ---
+.env.*
+!.env.example
+*.pfx
+*.key
+*.pem
+secrets/
+appsettings.*.local.json
+
+# --- Added: IDE / OS ---
+.vs/
+.idea/
+*.user
+*.suo
+.DS_Store
+
+# --- Added: AI tool local state (.claude/settings.json IS committed) ---
+.claude/settings.local.json
+.codex/

@@ -17,7 +17,7 @@
 ## Done
 - Repo created, solution structure scaffolded, all empty projects added.
 - Directory.Build.props, Directory.Packages.props, .editorconfig in place.
-- devcontainer.json updated (docker-in-docker, extensions).
+- Secured dev container (compose + firewall, no Docker socket, see ADR-001), CI, Dependabot, CODEOWNERS, Claude Code permissions.
 - docs/, seed/ folders created.
 - AGENTS.md, CLAUDE.md, PROJECT_PLAN.md committed.
 

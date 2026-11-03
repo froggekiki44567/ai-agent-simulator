@@ -1,0 +1,32 @@
+name: agenttown
+services:
+  dev:
+    build: { context: ., dockerfile: Dockerfile }
+    command: sleep infinity
+    volumes:
+      - ..:/workspace:cached
+      - claude-config:/home/vscode/.claude
+      - codex-config:/home/vscode/.codex
+    environment:
+      ConnectionStrings__nats: "nats://nats:4222"
+      ConnectionStrings__townDb: "Host=postgres;Port=5432;Database=agenttown;Username=agenttown;Password=agenttown-dev"
+      ConnectionStrings__ollama: "Endpoint=http://host.docker.internal:11434"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on: [nats, postgres]
+  nats:
+    image: nats:2-alpine
+    command: ["-js", "-sd", "/data"]
+    volumes: [nats-data:/data]
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: agenttown
+      POSTGRES_USER: agenttown
+      POSTGRES_PASSWORD: agenttown-dev
+    volumes: [pg-data:/var/lib/postgresql/data]
+volumes:
+  claude-config:
+  codex-config:
+  nats-data:
+  pg-data:

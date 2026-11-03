@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.0">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <IsAspireHost>true</IsAspireHost>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <!-- Aspire.Hosting.AppHost is included by the SDK -->
     <PackageReference Include="Aspire.Hosting.Nats" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
   </ItemGroup>
+  <!-- Day 2 (B): add ProjectReferences to World, Agents, Aml, Api and Web so Projects.* types are generated -->
 </Project>
