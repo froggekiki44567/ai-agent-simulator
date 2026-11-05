@@ -2,18 +2,27 @@
   <!-- Check for newer versions in the dev container with: dotnet list package (outdated option) -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
   <ItemGroup Label="Aspire">
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.0" />
     <PackageVersion Include="Aspire.Hosting.Nats" Version="13.4.0" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.0" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="9.3.1" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="13.4.0" />
     <PackageVersion Include="Aspire.NATS.Net" Version="13.4.0" />
   </ItemGroup>
 
   <ItemGroup Label="NATS">
-    <PackageVersion Include="NATS.Net" Version="2.5.3" />
+    <PackageVersion Include="NATS.Net" Version="2.7.3" />
+  </ItemGroup>
+
+  <ItemGroup Label="Serialization">
+    <PackageVersion Include="MessagePack" Version="2.5.307" />
+  </ItemGroup>
+
+  <ItemGroup Label="Security">
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.21" />
   </ItemGroup>
 
   <ItemGroup Label="Database">
@@ -23,19 +32,19 @@
   </ItemGroup>
 
   <ItemGroup Label="LLM">
-    <PackageVersion Include="OllamaSharp" Version="5.1.5" />
+    <PackageVersion Include="OllamaSharp" Version="5.4.12" />
   </ItemGroup>
 
   <ItemGroup Label="OpenTelemetry">
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
   </ItemGroup>
 
   <ItemGroup Label="Extensions">
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.3.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.3.1" />
   </ItemGroup>
@@ -46,7 +55,7 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="FluentAssertions" Version="7.2.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
-    <PackageVersion Include="Testcontainers" Version="3.11.0" />
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="3.11.0" />
+    <PackageVersion Include="Testcontainers" Version="4.16.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
   </ItemGroup>
 </Project>

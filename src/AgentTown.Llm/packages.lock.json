@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "OllamaSharp": {
+        "type": "Direct",
+        "requested": "[5.4.12, )",
+        "resolved": "5.4.12",
+        "contentHash": "uUKOgoTV9Fxo9J5syrY4OMZ/2/xlPO83tGG+FjGmY8HqJVJ1iUT5f8EsC9yNEqBBIoth9D8zzN4I5p1oQEMBhQ==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.0.0"
+        }
+      },
+      "Microsoft.Extensions.AI.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.0.0",
+        "contentHash": "PHeuDm2tC6wJPEQvleUr2kNQaIMNqSf3aEbzkIPlZyQ0+0SYI9SwXVLdGD1NPBI+xB+Vb2lxZKhrFlIf9kP9WA=="
+      },
+      "agenttown.contracts": {
+        "type": "Project"
+      }
+    }
+  }
+}
