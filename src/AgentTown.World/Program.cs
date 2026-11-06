@@ -82,6 +82,24 @@ world.SetAgentPosition(jonasId, 2, 3);
 var shop = world.Locations.First(
     location => location.Type == LocationType.Shop);
 
+
+// Sukuriame parduotuvę
+var demoShop = new Shop(shop.Id);
+world.AddShop(demoShop);
+
+// Pridedame 20 duonos vienetų po 3 €
+var bread = new Product("Duona", 3m);
+demoShop.AddStock(bread, 20);
+
+// Jonui suteikiame 100 €
+var jonasWallet = world.GetOrCreateWallet(jonasId, 100m);
+
+Console.WriteLine("=== AgentTown ekonomika ===");
+Console.WriteLine($"Jono balansas: {jonasWallet.Balance} €");
+Console.WriteLine($"Duonos kaina: {bread.Price} €");
+Console.WriteLine($"Duonos likutis: {demoShop.GetStock(bread.Id)}");
+
+
 // Suplanuojame Jono kelionę
 bool routePlanned = world.TryPlanRoute(jonasId, shop.Id);
 

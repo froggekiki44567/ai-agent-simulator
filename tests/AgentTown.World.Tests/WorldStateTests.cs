@@ -248,4 +248,135 @@ public class WorldStateTests
             world.GetTravelStatus(agentId));
     }
 
+
+    [Fact]
+    public void Salary_IsPaidOnlyAtWorkplace_OncePerDay()
+    {
+        var world = new WorldState();
+        var agentId = Guid.NewGuid();
+
+        // Sukuriame namus ir biurą
+        var home = new Location(
+            "Namas", LocationType.Home, 2, 3);
+
+        var office = new Location(
+            "Biuras", LocationType.Workplace, 7, 8);
+
+        world.AddLocation(home);
+        world.AddLocation(office);
+
+        // Jonas pradeda namuose
+        world.SetAgentPosition(agentId, 2, 3);
+
+        // Sukuriame ir priskiriame darbą
+        var job = new Job("Programuotojas", office.Id, 100m);
+
+        world.AddJob(job);
+        Assert.True(world.TryAssignJob(agentId, job.Id));
+
+        // Pradinis balansas – 20 €
+        var wallet = world.GetOrCreateWallet(agentId, 20m);
+
+        // Namuose atlyginimo gauti negalima
+        Assert.False(world.TryPaySalaryForShift(agentId));
+        Assert.Equal(20m, wallet.Balance);
+
+        // Testui perkeliame Joną į biurą
+        world.SetAgentPosition(agentId, 7, 8);
+
+        // Pirmas atlyginimas sėkmingas
+        Assert.True(world.TryPaySalaryForShift(agentId));
+        Assert.Equal(120m, wallet.Balance);
+
+        // Antrą kartą tą pačią dieną mokėti negalima
+        Assert.False(world.TryPaySalaryForShift(agentId));
+        Assert.Equal(120m, wallet.Balance);
+    }
+
+
+    [Fact]
+    public void ProcessSalaries_PaysAgentAtWorkplaceOnlyOncePerDay()
+    {
+        var world = new WorldState();
+        var agentId = Guid.NewGuid();
+
+        // Sukuriame namus ir darbovietę
+        var home = new Location(
+            "Namas", LocationType.Home, 2, 3);
+
+        var office = new Location(
+            "Biuras", LocationType.Workplace, 7, 8);
+
+        world.AddLocation(home);
+        world.AddLocation(office);
+
+        // Jonas pradeda namuose
+        world.SetAgentPosition(agentId, 2, 3);
+
+        // Įdarbiname Joną
+        var job = new Job("Programuotojas", office.Id, 100m);
+        world.AddJob(job);
+        Assert.True(world.TryAssignJob(agentId, job.Id));
+
+        var wallet = world.GetOrCreateWallet(agentId, 50m);
+
+        // Namuose atlyginimo negauna
+        world.ProcessSalaries();
+        Assert.Equal(50m, wallet.Balance);
+
+        // Testui perkeliame Joną į darbovietę
+        world.SetAgentPosition(agentId, 7, 8);
+
+        // Sistema automatiškai išmoka atlyginimą
+        world.ProcessSalaries();
+        Assert.Equal(150m, wallet.Balance);
+
+        // Antrą kartą tą pačią dieną nemoka
+        world.ProcessSalaries();
+        Assert.Equal(150m, wallet.Balance);
+    }
+
+    [Fact]
+    public void Bank_CanTransferMoneyBetweenAgents()
+    {
+        var world = new WorldState();
+
+        var jonasId = Guid.NewGuid();
+        var petrasId = Guid.NewGuid();
+
+        // Sukuriame agentų gyvenamąją vietą
+        var home = new Location(
+            "Namas", LocationType.Home, 2, 3);
+
+        world.AddLocation(home);
+
+        // Abu agentai atsiranda miestelyje
+        world.SetAgentPosition(jonasId, 2, 3);
+        world.SetAgentPosition(petrasId, 2, 3);
+
+        // Jonas turi 100 €, Petras – 30 €
+        var jonasWallet = world.GetOrCreateWallet(jonasId, 100m);
+        var petrasWallet = world.GetOrCreateWallet(petrasId, 30m);
+
+        // Jonas perveda Petrui 20 €
+        bool success = world.TryTransferMoney(
+            jonasId, petrasId, 20m);
+
+        Assert.True(success);
+
+        // Patikriname abiejų agentų balansus
+        Assert.Equal(80m, jonasWallet.Balance);
+        Assert.Equal(50m, petrasWallet.Balance);
+
+        // Jonas bando pervesti daugiau, nei turi
+        bool failedTransfer = world.TryTransferMoney(
+            jonasId, petrasId, 200m);
+
+        Assert.False(failedTransfer);
+
+        // Po nesėkmingo pervedimo balansai nesikeičia
+        Assert.Equal(80m, jonasWallet.Balance);
+        Assert.Equal(50m, petrasWallet.Balance);
+    }
+
 }
