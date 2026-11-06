@@ -12,16 +12,21 @@ public sealed class WorldTickService(
         CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(
-            TimeSpan.FromSeconds(5));
+            TimeSpan.FromSeconds(1));
 
         try
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
+
                 long tick = worldState.AdvanceTick();
 
+                worldState.AdvanceAgentRoutes();
+
                 logger.LogInformation(
-                    "AgentTown: pasaulio ciklas #{Tick}",
+                    "AgentTown | Diena {Day} | Laikas {Time} | Tick #{Tick}",
+                    worldState.CurrentDay,
+                    worldState.CurrentTime.ToString("HH:mm"),
                     tick);
             }
         }
