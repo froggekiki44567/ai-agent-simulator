@@ -164,4 +164,88 @@ public class WorldStateTests
         Assert.Equal((7, 3), (finalPosition.X, finalPosition.Y));
     }
 
+
+    [Fact]
+    public void TravelStatus_ChangesFromIdleToTravelingToArrived()
+    {
+        var world = new WorldState();
+        var agentId = Guid.NewGuid();
+
+        // Sukuriame namą ir parduotuvę
+        var home = new Location(
+            "Namas", LocationType.Home, 2, 3);
+
+        var shop = new Location(
+            "Parduotuvė", LocationType.Shop, 7, 3);
+
+        world.AddLocation(home);
+        world.AddLocation(shop);
+
+        // Sukuriame kelią
+        for (int x = 2; x <= 7; x++)
+        {
+            world.Map.AddRoad(x, 4);
+        }
+
+        // Agentas atsiranda namuose
+        world.SetAgentPosition(agentId, 2, 3);
+
+        Assert.Equal(
+            TravelStatus.Idle,
+            world.GetTravelStatus(agentId));
+
+        // Suplanuojame kelionę
+        Assert.True(world.TryPlanRoute(agentId, shop.Id));
+
+        Assert.Equal(
+            TravelStatus.Traveling,
+            world.GetTravelStatus(agentId));
+
+        // Atliekame 7 judėjimo ciklus
+        for (int i = 0; i < 7; i++)
+        {
+            world.AdvanceAgentRoutes();
+        }
+
+        // Patikriname, ar agentas atvyko
+        Assert.Equal(
+            TravelStatus.Arrived,
+            world.GetTravelStatus(agentId));
+
+        var position = world.GetAgentPosition(agentId);
+
+        Assert.NotNull(position);
+        Assert.Equal((7, 3), (position.X, position.Y));
+    }
+
+
+    [Fact]
+    public void TryPlanRoute_WhenNoPathExists_SetsFailedStatus()
+    {
+        var world = new WorldState();
+        var agentId = Guid.NewGuid();
+
+        var home = new Location(
+            "Namas", LocationType.Home, 2, 3);
+
+        var shop = new Location(
+            "Parduotuvė", LocationType.Shop, 7, 3);
+
+        world.AddLocation(home);
+        world.AddLocation(shop);
+
+        // Agentas atsiranda namuose
+        world.SetAgentPosition(agentId, 2, 3);
+
+        // Kelių nesukuriame
+        bool planned = world.TryPlanRoute(agentId, shop.Id);
+
+        Assert.False(planned);
+
+        // Nesėkminga kelionė turi būti pažymėta Failed
+        Assert.Equal(
+            TravelStatus.Failed,
+            world.GetTravelStatus(agentId));
+    }
+
 }

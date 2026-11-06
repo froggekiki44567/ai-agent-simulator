@@ -84,7 +84,10 @@ public sealed class WorldState
         return _agentPositions.GetValueOrDefault(agentId);
     }
 
-
+    public IReadOnlyList<AgentPosition> GetAgentPositions()
+    {
+        return _agentPositions.Values.ToArray();
+    }
 
     public bool TryMoveAgent(Guid agentId, int x, int y)
     {
@@ -141,51 +144,81 @@ public sealed class WorldState
             (destination.X, destination.Y));
 
         if (path.Count == 0)
+        {
+            // Kelio iki tikslo nėra
+            _travelStatuses[agentId] = TravelStatus.Failed;
+
+            // Pašaliname ankstesnį maršrutą, jei toks buvo
+            _agentRoutes.Remove(agentId);
+
             return false;
+        }
 
         // Išsaugome maršrutą be pradinės pozicijos
+
         _agentRoutes[agentId] = new Queue<(int X, int Y)>(
             path.Skip(1));
+
+        // Pažymime, kad agentas pradėjo kelionę
+        _travelStatuses[agentId] = path.Count > 1
+            ? TravelStatus.Traveling
+            : TravelStatus.Arrived;
 
         return true;
     }
 
 
+
     public void AdvanceAgentRoutes()
     {
-        // Pereiname per visus keliaujančius agentus
         foreach (var agentId in _agentRoutes.Keys.ToArray())
         {
             var route = _agentRoutes[agentId];
 
-            // Jeigu maršrutas baigėsi
+            // Agentas jau pasiekė tikslą
             if (route.Count == 0)
             {
+                _travelStatuses[agentId] = TravelStatus.Arrived;
                 _agentRoutes.Remove(agentId);
                 continue;
             }
 
-            // Pasiimame kitą maršruto langelį
             var next = route.Peek();
 
-            // Bandome pajudinti agentą
+            // Bandome žengti kitą žingsnį
             if (!TryMoveAgent(agentId, next.X, next.Y))
             {
-                // Jeigu žingsnis neįmanomas,
-                // nutraukiame kelionę
+                _travelStatuses[agentId] = TravelStatus.Failed;
                 _agentRoutes.Remove(agentId);
                 continue;
             }
 
-            // Žingsnis atliktas – pašaliname jį iš eilės
+            // Sėkmingai pajudėjome
             route.Dequeue();
 
-            // Jeigu agentas pasiekė tikslą
+            // Patikriname, ar kelionė baigta
             if (route.Count == 0)
             {
+                _travelStatuses[agentId] = TravelStatus.Arrived;
                 _agentRoutes.Remove(agentId);
             }
         }
     }
+
+
+    private readonly Dictionary<Guid, TravelStatus> _travelStatuses = new();
+
+    public TravelStatus? GetTravelStatus(Guid agentId)
+    {
+        // Jeigu agento pasaulyje nėra
+        if (!_agentPositions.ContainsKey(agentId))
+            return null;
+
+        // Jeigu agentas neturi kelionės, jis yra Idle
+        return _travelStatuses.GetValueOrDefault(
+            agentId,
+            TravelStatus.Idle);
+    }
+
 
 }

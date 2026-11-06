@@ -28,6 +28,19 @@ public sealed class WorldTickService(
                     worldState.CurrentDay,
                     worldState.CurrentTime.ToString("HH:mm"),
                     tick);
+
+
+                foreach (var agent in worldState.GetAgentPositions())
+                {
+                    var status = worldState.GetTravelStatus(agent.AgentId);
+
+                    logger.LogInformation(
+                        "Agentas {AgentId} | Pozicija: ({X}, {Y}) | Busena: {Status}",
+                        agent.AgentId.ToString("N")[..8],
+                        agent.X,
+                        agent.Y,
+                        status);
+                }
             }
         }
         catch (OperationCanceledException)

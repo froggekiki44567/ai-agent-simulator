@@ -72,4 +72,21 @@ for (int y = 0; y < world.Map.Height; y++)
 }
 
 
+// Demonstracinis agentas Jonas
+var jonasId = Guid.NewGuid();
+
+// Jonas atsiranda namuose
+world.SetAgentPosition(jonasId, 2, 3);
+
+// Randame parduotuvę
+var shop = world.Locations.First(
+    location => location.Type == LocationType.Shop);
+
+// Suplanuojame Jono kelionę
+bool routePlanned = world.TryPlanRoute(jonasId, shop.Id);
+
+Console.WriteLine(
+    $"Jonas pradeda kelionę į parduotuvę. Maršrutas: {routePlanned}");
+
+
 host.Run();
