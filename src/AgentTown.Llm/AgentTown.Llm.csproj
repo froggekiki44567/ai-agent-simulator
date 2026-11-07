@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="OllamaSharp" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" />
     <ProjectReference Include="..\AgentTown.Contracts\AgentTown.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="AgentTown.Llm.Tests" />
   </ItemGroup>
 </Project>
