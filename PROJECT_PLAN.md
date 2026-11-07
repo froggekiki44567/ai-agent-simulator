@@ -304,10 +304,10 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 2 – Thu 11-05
 **A**
-- [ ] `AgentTown.Contracts`: `Envelope<T>`, all records from 2.4 and 2.5, the `Subjects` constants class.
-- [ ] `ADR-002-agents-propose-world-decides.md`: why World is the single owner of state.
-- [ ] `ADR-003-llm-only-for-interesting-moments.md`.
-- [ ] Unit test: all records serialize and deserialize with `System.Text.Json`.
+- [x] `AgentTown.Contracts`: `Envelope<T>`, all records from 2.4 and 2.5, the `Subjects` constants class.
+- [x] `ADR-002-agents-propose-world-decides.md`: why World is the single owner of state.
+- [x] `ADR-003-llm-only-for-interesting-moments.md`.
+- [x] Unit test: all records serialize and deserialize with `System.Text.Json`.
 
 **B**
 - [ ] `AgentTown.AppHost`: in the dev container use `AddConnectionString("nats" / "townDb" / "ollama")`; outside it use `AddNats().WithJetStream()` and `AddPostgres()` with the `pgvector/pgvector:pg17` image (snippet in `README.md`).
@@ -320,7 +320,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 **A**
 - [ ] `AgentTown.Agents` Worker Service: wire up ServiceDefaults and Messaging, subscribe to `town.tick`, log each tick.
 - [ ] Register Agents in the AppHost (`.WithReference(nats).WithReference(db)`).
-- [ ] `seed/agents.json`: 20 agents with names, age, 3–5 personality traits, a goal, a job and a home.
+- [x] `seed/agents.json`: 20 agents with names, age, 3–5 personality traits, a goal, a job and a home. *(on branch `a/agents-seed`, with loader and tests)*
 
 **B**
 - [ ] `AgentTown.World` Worker Service: `SimulationClock` publishes `TickOccurred` every `TickIntervalMs`.
@@ -336,8 +336,8 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 4 – Mon 11-09
 **A**
-- [ ] `AgentState` model in the Agents service (local copy: money, location, needs, status).
-- [ ] `AgentRegistry`: loads agents from the DB on startup; seeds from `agents.json` if the DB is empty.
+- [x] `AgentState` model in the Agents service (local copy: money, location, needs, status).
+- [ ] `AgentRegistry`: loads agents from the DB on startup; seeds from `agents.json` if the DB is empty. *(partial: in-memory registry done; DB loading waits for B's Persistence)*
 - [ ] Test: the registry loads the seed correctly.
 
 **B**
@@ -347,9 +347,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 5 – Tue 11-10
 **A**
-- [ ] `NeedsSystem`: Hunger, Energy and Social decrease every tick (configurable rates) and recover after actions.
-- [ ] `RuleBasedPlanner`: daily schedule (sleep 23–7, work according to `Job.ShiftStart/End`, eat when Hunger < 30, rest when Energy < 20).
-- [ ] 6+ unit tests for the planner (different times and needs).
+- [x] `NeedsSystem`: Hunger, Energy and Social decrease every tick (configurable rates) and recover after actions.
+- [x] `RuleBasedPlanner`: daily schedule (sleep 23–7, work according to `Job.ShiftStart/End`, eat when Hunger < 30, rest when Energy < 20).
+- [x] 6+ unit tests for the planner (different times and needs).
 
 **B**
 - [ ] `ActionPipeline`: `town.actions.requested` → per-type `IActionValidator` → execution → `ActionResult`.
@@ -358,9 +358,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 6 – Wed 11-11
 **A**
-- [ ] `AgentLoop`: every tick, the planner picks an action for each idle agent → `ActionRequested`.
-- [ ] Handle `ActionResult`: update `AgentState`. On failure, try a different action next tick.
-- [ ] An agent has only one "active" action at a time (Move continues over several ticks).
+- [x] `AgentLoop`: every tick, the planner picks an action for each idle agent → `ActionRequested`. *(loop logic and tests done; hooking it to `town.tick` waits for B's `INatsBus`)*
+- [x] Handle `ActionResult`: update `AgentState`. On failure, try a different action next tick.
+- [x] An agent has only one "active" action at a time (Move continues over several ticks).
 
 **B**
 - [ ] `Work` action: the agent must be at the workplace during working hours. The wage is paid at the end of the shift.
@@ -369,9 +369,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 7 – Thu 11-12
 **A**
-- [ ] OpenTelemetry: custom `ActivitySource("AgentTown.Agents")`, one span per decision (agent, source Rules/Llm, action).
-- [ ] Metrics: `agents.decisions{source}`, `agents.action_failures`.
-- [ ] Fix planner edge cases (agent with no job, agent with no money).
+- [x] OpenTelemetry: custom `ActivitySource("AgentTown.Agents")`, one span per decision (agent, source Rules/Llm, action).
+- [x] Metrics: `agents.decisions{source}`, `agents.action_failures`.
+- [x] Fix planner edge cases (agent with no job, agent with no money).
 
 **B**
 - [ ] `Buy`, `Sell`, `Eat`, `Sleep` actions: inventory, prices, opening hours, enough money.
@@ -393,9 +393,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 9 – Mon 11-16
 **A**
-- [ ] `AgentTown.Llm`: `ILlmClient` (`CompleteJsonAsync<T>`, `EmbedAsync`), `OllamaLlmClient` via OllamaSharp, `FakeLlmClient` for tests.
-- [ ] A health check that verifies the model is reachable.
-- [ ] Smoke test: one agent gets one LLM decision and it is logged.
+- [x] `AgentTown.Llm`: `ILlmClient` (`CompleteJsonAsync<T>`, `EmbedAsync`), `OllamaLlmClient` via OllamaSharp, `FakeLlmClient` for tests.
+- [x] A health check that verifies the model is reachable.
+- [x] Smoke test: one agent gets one LLM decision and it is logged.
 
 **B**
 - [ ] `AgentTown.Api`: `GET /api/agents`, `GET /api/agents/{id}`, `GET /api/buildings`, `GET /api/world`.
@@ -404,9 +404,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 10 – Tue 11-17
 **A**
-- [ ] `PromptBuilder`: system prompt (world rules, allowed actions, JSON format) plus agent context (personality, needs, money, time, location, nearby agents and buildings; memory comes later).
-- [ ] `DecisionParser`: JSON → `ActionRequested`, validating that the action and target exist. Otherwise, fall back.
-- [ ] 8+ parser tests with malformed JSON examples.
+- [x] `PromptBuilder`: system prompt (world rules, allowed actions, JSON format) plus agent context (personality, needs, money, time, location, nearby agents and buildings; memory comes later).
+- [x] `DecisionParser`: JSON → `ActionRequested`, validating that the action and target exist. Otherwise, fall back.
+- [x] 8+ parser tests with malformed JSON examples.
 
 **B**
 - [ ] SignalR `TownHub` (`/hubs/town`): sends `AgentMoved`, `TransactionCompleted`, `ConversationMessage`, `AgentThought`, `TickOccurred`.
@@ -414,9 +414,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 11 – Wed 11-18
 **A**
-- [ ] `LlmScheduler`: `Channel<LlmRequest>`, limited concurrency (`Llm:MaxConcurrency`, start at 2), 15 s timeout, per-tick budget (`Llm:MaxCallsPerTick`).
-- [ ] `InterestingMomentDetector`: decides when to call the LLM (another agent nearby and Social is low, money is low, a new situation, an event). Rules handle everything else.
-- [ ] Metrics: `llm.calls`, `llm.latency`, `llm.fallbacks`, `llm.queue_length`.
+- [x] `LlmScheduler`: `Channel<LlmRequest>`, limited concurrency (`Llm:MaxConcurrency`, start at 2), 15 s timeout, per-tick budget (`Llm:MaxCallsPerTick`).
+- [x] `InterestingMomentDetector`: decides when to call the LLM (another agent nearby and Social is low, money is low, a new situation, an event). Rules handle everything else.
+- [x] Metrics: `llm.calls`, `llm.latency`, `llm.fallbacks`, `llm.queue_length`.
 
 **B**
 - [ ] `AgentTown.Web` Blazor Web App: layout (map in the center, event feed on the right, control bar at the top).
@@ -427,7 +427,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 **A**
 - [ ] `Talk` action → `ConversationService`: 2–4 lines between two agents, each generated by the LLM using both personalities.
 - [ ] Each line is published as `ConversationMessage`. A conversation can end in an agreement (e.g. "let's meet at the cafe tomorrow").
-- [ ] Publish `AgentThought` after every LLM decision.
+- [x] Publish `AgentThought` after every LLM decision.
 
 **B**
 - [ ] Canvas map via JS interop: grid, buildings (colors and icons by type), agents as dots with names.
@@ -631,9 +631,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 | Phase | Status | Notes |
 |---|---|---|
-| 1. Foundation | ⬜ Not started | |
-| 2. World without LLM | ⬜ | |
-| 3. LLM + UI | ⬜ | |
+| 1. Foundation | 🔄 In progress | A: contracts, ADRs, seed done. Waiting for B's AppHost/Messaging for G0 |
+| 2. World without LLM | 🔄 In progress | A: state, needs, planner, agent loop, telemetry done (in-memory, not yet on NATS) |
+| 3. LLM + UI | 🔄 In progress | A: LLM client, prompts, parser, scheduler, detector done. Conversations next |
 | 4. Economy + memory | ⬜ | |
 | 5. Events | ⬜ | |
 | 6. Quality | ⬜ | |
