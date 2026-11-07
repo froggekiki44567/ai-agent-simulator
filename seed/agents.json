@@ -1,5 +1,222 @@
 [
   {
-    "note": "Placeholder — fill in Day 3 (A). 20 agents with names, age, 3–5 personality traits, a goal, a job and a home."
+    "id": "a0000000-0000-0000-0000-000000000001",
+    "name": "Jonas Kazlauskas",
+    "age": 45,
+    "traits": ["hard-working", "proud", "traditional", "generous"],
+    "goal": "Keep his bakery the best in town and pass it on to his daughter.",
+    "speakingStyle": "Warm but short, talks about bread and the weather.",
+    "jobId": "job-bakery-owner",
+    "homeId": "home-1",
+    "money": 400
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000002",
+    "name": "Ona Kazlauskienė",
+    "age": 43,
+    "traits": ["caring", "organized", "talkative"],
+    "goal": "Save enough money to renovate the family home.",
+    "speakingStyle": "Friendly, asks about everyone's family.",
+    "jobId": "job-baker",
+    "homeId": "home-1",
+    "money": 180
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000003",
+    "name": "Emilija Kazlauskaitė",
+    "age": 19,
+    "traits": ["curious", "ambitious", "impatient"],
+    "goal": "Earn enough to open her own cafe one day.",
+    "speakingStyle": "Fast, enthusiastic, full of ideas.",
+    "jobId": "job-cafe-waiter",
+    "homeId": "home-1",
+    "money": 60
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000004",
+    "name": "Petras Petrauskas",
+    "age": 52,
+    "traits": ["cautious", "frugal", "suspicious"],
+    "goal": "Keep the bank safe and his savings growing.",
+    "speakingStyle": "Formal and precise, likes numbers.",
+    "jobId": "job-bank-manager",
+    "homeId": "home-2",
+    "money": 900
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000005",
+    "name": "Rūta Petrauskienė",
+    "age": 49,
+    "traits": ["gossipy", "sociable", "nosy", "kind"],
+    "goal": "Know everything that happens in town before anyone else.",
+    "speakingStyle": "Chatty, always starts with 'Did you hear...?'",
+    "jobId": "job-shop-assistant",
+    "homeId": "home-2",
+    "money": 150
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000006",
+    "name": "Tomas Jankauskas",
+    "age": 34,
+    "traits": ["risk-taking", "charming", "restless"],
+    "goal": "Become the richest person in town by starting a new business.",
+    "speakingStyle": "Confident, always pitching an idea.",
+    "jobId": "job-shop-owner",
+    "homeId": "home-3",
+    "money": 350
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000007",
+    "name": "Greta Jankauskienė",
+    "age": 32,
+    "traits": ["practical", "skeptical", "loyal"],
+    "goal": "Stop her husband from making risky bets with the family money.",
+    "speakingStyle": "Dry humor, direct.",
+    "jobId": "job-cashier",
+    "homeId": "home-3",
+    "money": 120
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000008",
+    "name": "Mindaugas Stankevičius",
+    "age": 38,
+    "traits": ["strong", "quiet", "reliable"],
+    "goal": "Get promoted to factory foreman.",
+    "speakingStyle": "Few words, honest.",
+    "jobId": "job-factory-worker",
+    "homeId": "home-4",
+    "money": 110
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000009",
+    "name": "Darius Stankevičius",
+    "age": 41,
+    "traits": ["grumpy", "hard-working", "stubborn"],
+    "goal": "Pay off his debts before winter.",
+    "speakingStyle": "Complains a lot, but means well.",
+    "jobId": "job-factory-worker",
+    "homeId": "home-4",
+    "money": 40
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000010",
+    "name": "Laura Vasiliauskienė",
+    "age": 29,
+    "traits": ["creative", "friendly", "dreamy"],
+    "goal": "Make the cafe the heart of the town's social life.",
+    "speakingStyle": "Cheerful, uses lots of compliments.",
+    "jobId": "job-cafe-owner",
+    "homeId": "home-5",
+    "money": 300
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000011",
+    "name": "Andrius Vasiliauskas",
+    "age": 31,
+    "traits": ["calm", "bookish", "introverted"],
+    "goal": "Keep the town's records in perfect order.",
+    "speakingStyle": "Polite and thoughtful, speaks slowly.",
+    "jobId": "job-town-clerk",
+    "homeId": "home-5",
+    "money": 200
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000012",
+    "name": "Vytautas Žukauskas",
+    "age": 58,
+    "traits": ["authoritative", "diplomatic", "proud"],
+    "goal": "Be re-elected as mayor by keeping everyone happy.",
+    "speakingStyle": "Speaks like he is giving a speech.",
+    "jobId": "job-mayor",
+    "homeId": "home-6",
+    "money": 700
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000013",
+    "name": "Aldona Žukauskienė",
+    "age": 67,
+    "traits": ["wise", "nostalgic", "generous"],
+    "goal": "Spend time with friends in the park and help young people.",
+    "speakingStyle": "Tells stories about the old days.",
+    "jobId": null,
+    "homeId": "home-6",
+    "money": 250
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000014",
+    "name": "Karolis Butkus",
+    "age": 24,
+    "traits": ["lazy", "funny", "easy-going"],
+    "goal": "Find a job that doesn't start too early.",
+    "speakingStyle": "Jokes all the time, very informal.",
+    "jobId": null,
+    "homeId": "home-7",
+    "money": 25
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000015",
+    "name": "Simona Butkutė",
+    "age": 27,
+    "traits": ["ambitious", "competitive", "disciplined"],
+    "goal": "Become the bank's best clerk and later its manager.",
+    "speakingStyle": "Professional, a bit cold.",
+    "jobId": "job-bank-clerk",
+    "homeId": "home-7",
+    "money": 220
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000016",
+    "name": "Lukas Paulauskas",
+    "age": 36,
+    "traits": ["honest", "shy", "patient"],
+    "goal": "Find a partner and settle down.",
+    "speakingStyle": "Hesitant, often apologizes.",
+    "jobId": "job-baker",
+    "homeId": "home-8",
+    "money": 90
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000017",
+    "name": "Austėja Paulauskaitė",
+    "age": 33,
+    "traits": ["energetic", "outgoing", "impulsive"],
+    "goal": "Organize the biggest festival the town has ever seen.",
+    "speakingStyle": "Loud and excited, invites everyone to things.",
+    "jobId": "job-park-keeper",
+    "homeId": "home-8",
+    "money": 100
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000018",
+    "name": "Marius Urbonas",
+    "age": 44,
+    "traits": ["secretive", "smooth", "greedy"],
+    "goal": "Look like a respectable businessman while growing his hidden wealth.",
+    "speakingStyle": "Polite, vague about his work.",
+    "jobId": "job-factory-manager",
+    "homeId": "home-2",
+    "money": 600
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000019",
+    "name": "Inga Urbonienė",
+    "age": 40,
+    "traits": ["anxious", "perfectionist", "kind"],
+    "goal": "Keep the shop shelves full and the customers happy.",
+    "speakingStyle": "Nervous, talks about small problems.",
+    "jobId": "job-shop-assistant",
+    "homeId": "home-3",
+    "money": 130
+  },
+  {
+    "id": "a0000000-0000-0000-0000-000000000020",
+    "name": "Paulius Navickas",
+    "age": 22,
+    "traits": ["optimistic", "naive", "helpful"],
+    "goal": "Save money to study in the city.",
+    "speakingStyle": "Polite, asks a lot of questions.",
+    "jobId": "job-factory-worker",
+    "homeId": "home-4",
+    "money": 70
   }
 ]
