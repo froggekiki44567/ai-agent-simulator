@@ -2,22 +2,23 @@
 
 > Updated at the end of each session.
 
-## Last session: 2026-11-03
+## Last session: 2026-11-07
 
 ### What I did
-- Scaffolded the full solution structure (all src/ and tests/ projects, sln, props files).
-- Added AGENTS.md, CLAUDE.md, PROJECT_PLAN.md, README.md, .editorconfig.
-- Replaced docker-in-docker with a secured compose dev container (ADR-001); added CI, Dependabot, CODEOWNERS, .claude/settings.json.
-- Created docs/ and seed/ skeleton.
+- Day 2: `AgentTown.Contracts` + serialization tests, ADR-002, ADR-003 (`a/contracts`).
+- Day 3: 20 seed agents with loader and tests (`a/agents-seed`).
+- Days 4–7: `AgentState`, `NeedsSystem`, `RuleBasedPlanner`, `AgentLoop`, `AgentRegistry` (in-memory), telemetry (`a/agent-brain`, `a/agent-loop`).
+- Days 9–11: `AgentTown.Llm` (Ollama + fake client, health check, prompt builder, decision parser, scheduler, metrics), `InterestingMomentDetector`, `AgentDecisionService` (`a/llm`).
 
 ### Where I stopped
-Day 1 tasks complete on my side.
+`a/agent-loop` pushed. Day 12 conversations done on `a/conversations` (stacked on `a/agent-loop`). Build clean, 167 tests green. 29 of 72 A tasks done.
 
-### What comes next (Day 2)
-- `AgentTown.Contracts`: Envelope<T>, all records from section 2.4 and 2.5, Subjects constants.
-- ADR-002 and ADR-003 (ADR-001 is the dev container).
-- Unit test: all records serialize/deserialize with System.Text.Json.
+### What comes next
+- Days 14–16: memory writer/retriever and relationships (in-memory store first), `IAgentMindQuery`.
+- Day 19: react to `town.events.applied`.
 
 ### What I need from colleague
-- Confirm dev container builds correctly.
-- Day 2: AppHost wired with NATS + Postgres + Ollama, ServiceDefaults, Messaging with INatsBus.
+- UI: conversation lines arrive together at the end of a conversation; show them one after another by `LineIndex`.
+- `AgentTown.Messaging` with `INatsBus` so the loop can subscribe to `town.tick` and `town.actions.result.*`.
+- `AgentTown.Persistence` (`TownDbContext`) and later the `Memories` table with `vector(768)`.
+- Review the stacked PRs: `a/contracts` → `a/agent-brain` → `a/llm` → `a/agent-loop`, plus `a/agents-seed`.

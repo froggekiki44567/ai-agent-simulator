@@ -10,4 +10,7 @@
     <PackageReference Include="NSubstitute" />
     <ProjectReference Include="..\..\src\AgentTown.Llm\AgentTown.Llm.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
 </Project>
