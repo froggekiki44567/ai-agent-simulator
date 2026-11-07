@@ -40,7 +40,6 @@ You are working with a two-person team: **A = Ervis** and **B = Colleague**. Eac
 - Everything is written in C#/.NET: .NET 10, Aspire, ASP.NET Core, Blazor, SignalR, OllamaSharp, EF Core.
 - Microservice architecture over **NATS JetStream**. Similar projects are usually a single monolithic process written in Python or TypeScript.
 - Live event injection.
-- **AML angle:** some agents launder money, so the system produces labeled synthetic transaction data for money-laundering detection.
 - Inspiration we should cite ourselves: Stanford "Generative Agents" (2023) and a16z "AI Town".
 
 **Defense goal:** a working demo in the browser. 30–50 agents move around the map, conversation bubbles and the event feed are visible, clicking an agent shows its "mind", the event panel works and agents react to events.
@@ -58,13 +57,13 @@ You are working with a two-person team: **A = Ervis** and **B = Colleague**. Eac
                  │                                              ▼   │                          │
                  │                    ┌──────────────── NATS JetStream (stream TOWN) ────────┐ │
                  │                    │                     town.>                            │ │
-                 │                    └───▲──────────────▲──────────────▲───────────────────┘ │
-                 │                        │              │              │                      │
-                 │         AgentTown.World       AgentTown.Agents     AgentTown.Aml            │
-                 │        (clock, world,        (decisions, LLM,     (transaction ledger,      │
-                 │         economy, rules)       memory, relations)   labels, export)          │
-                 │                │                    │    │                │                 │
-                 │                ▼                    ▼    ▼                ▼                 │
+                 │                    └───▲──────────────▲──────────────────────────────────┘ │
+                 │                        │              │                                     │
+                 │         AgentTown.World       AgentTown.Agents                              │
+                 │        (clock, world,        (decisions, LLM,                               │
+                 │         economy, rules)       memory, relations)                            │
+                 │                │                    │    │                                  │
+                 │                ▼                    ▼    ▼                                  │
                  │           PostgreSQL + pgvector ◄───┘  Ollama (LLM + embeddings)             │
                  └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -108,14 +107,12 @@ AgentTown/
 │   ├── AgentTown.World/           # Worker: clock, rules           (B)
 │   ├── AgentTown.Agents/          # Worker: agent loop             (A)
 │   ├── AgentTown.Llm/             # OllamaSharp, prompts, queue    (A)
-│   ├── AgentTown.Aml/             # Worker: AML ledger, export     (A)
 │   ├── AgentTown.Api/             # REST + SignalR hub             (B)
 │   └── AgentTown.Web/             # Blazor UI, canvas map          (B)
 └── tests/
     ├── AgentTown.World.Tests/     (B)
     ├── AgentTown.Agents.Tests/    (A)
     ├── AgentTown.Llm.Tests/       (A)
-    ├── AgentTown.Aml.Tests/       (A)
     ├── AgentTown.Api.Tests/       (B)
     └── AgentTown.IntegrationTests/ (both; compose services in dev container, Testcontainers in CI)
 ```
@@ -149,15 +146,15 @@ The JetStream stream `TOWN` covers subjects `town.>`. Retention: limits, kept fo
 
 | Subject | Publisher | Subscribers | Record |
 |---|---|---|---|
-| `town.tick` | World | Agents, Api, Aml | `TickOccurred` |
+| `town.tick` | World | Agents, Api | `TickOccurred` |
 | `town.actions.requested` | Agents | World | `ActionRequested` |
 | `town.actions.result.{agentId}` | World | Agents, Api | `ActionResult` |
 | `town.agents.moved` | World | Api | `AgentMoved` |
-| `town.transactions.completed` | World | Aml, Api, Agents | `TransactionCompleted` |
+| `town.transactions.completed` | World | Api, Agents | `TransactionCompleted` |
 | `town.conversations.message` | Agents | Api, Agents | `ConversationMessage` |
 | `town.agents.thought` | Agents | Api | `AgentThought` (what the agent is "thinking", shown in the UI) |
 | `town.events.injected` | Api | World | `WorldEventInjected` |
-| `town.events.applied` | World | Agents, Api, Aml | `WorldEventApplied` |
+| `town.events.applied` | World | Agents, Api | `WorldEventApplied` |
 | `town.world.snapshot` | World (every 10 ticks) | Api | `WorldSnapshot` |
 | `town.control` | Api | World | `SimulationControl` (Pause/Resume/Speed) |
 
@@ -181,12 +178,12 @@ public record TransactionCompleted(Guid TxId, Guid FromAccount, Guid ToAccount,
 ```
 
 **Database tables (Persistence):**
-- `Agents`: Id, Name, Age, PersonalityJson (traits, goals, speaking style), JobId, HomeId, Money, X, Y, Hunger, Energy, Social, Status (Active/Bankrupt/Sleeping), IsLaunderer.
+- `Agents`: Id, Name, Age, PersonalityJson (traits, goals, speaking style), JobId, HomeId, Money, X, Y, Hunger, Energy, Social, Status (Active/Bankrupt/Sleeping).
 - `Buildings`: Id, Type (Home, Bakery, Shop, Cafe, Bank, Factory, TownHall, Park), Name, X, Y, OpenHour, CloseHour, OwnerAgentId.
 - `Items` / `Inventory`: BuildingId, ItemId, Quantity, Price.
 - `Jobs`: Id, BuildingId, Title, WagePerShift, ShiftStart, ShiftEnd.
 - `BankAccounts`: Id, OwnerAgentId, Balance, LoanBalance.
-- `Transactions`: same as `TransactionCompleted` + `AmlLabel` (nullable).
+- `Transactions`: same as `TransactionCompleted`.
 - `Memories` (A): Id, AgentId, Tick, Text, Importance (1–10), Kind (Observation/Conversation/Reflection/Event), Embedding `vector(768)`.
 - `Relationships` (A): AgentId, OtherAgentId, Affinity (-100…100), LastInteractionTick.
 - `WorldEvents`: Id, Type, ParametersJson, InjectedAtTick, AppliedAtTick.
@@ -217,12 +214,12 @@ If the JSON doesn't parse, the action doesn't exist, or there is no response wit
 | | **A – Ervis** | **B – Colleague** |
 |---|---|---|
 | Area | Agent "brains" | The world and everything the user sees |
-| Projects | `Agents`, `Llm`, `Aml`, Memory/Relationships tables | `AppHost`, `ServiceDefaults`, `Messaging`, `Persistence`, `World`, `Api`, `Web` |
-| Responsibilities | Agent loop, needs, rule-based planner, LLM integration, prompts, LLM queue and budget, memory (pgvector), relationships, conversations, reactions to events, AML scenarios and export | Repo infrastructure, clock, map, pathfinding, action validation, economy (jobs, shops, prices, bank), event effects on the world, REST API, SignalR, the entire UI |
-| Tests | Agents/Llm/Aml unit tests, Fake LLM | World/Api unit and integration tests |
+| Projects | `Agents`, `Llm`, Memory/Relationships tables | `AppHost`, `ServiceDefaults`, `Messaging`, `Persistence`, `World`, `Api`, `Web` |
+| Responsibilities | Agent loop, needs, rule-based planner, LLM integration, prompts, LLM queue and budget, memory (pgvector), relationships, conversations, reactions to events | Repo infrastructure, clock, map, pathfinding, action validation, economy (jobs, shops, prices, bank), event effects on the world, REST API, SignalR, the entire UI |
+| Tests | Agents/Llm unit tests, Fake LLM | World/Api unit and integration tests |
 | Shared | `Contracts`, `IntegrationTests`, `docs/`, defense presentation | same |
 
-**Why this split:** the only touchpoint between the two areas is `Contracts` and NATS. That means you almost never edit the same file, and the contract is easy to test in isolation. A gets the AML part because it ties in with his work at the bank and will be a strong point at the defense.
+**Why this split:** the only touchpoint between the two areas is `Contracts` and NATS. That means you almost never edit the same file, and the contract is easy to test in isolation.
 
 ### 3.1 Git rules
 
@@ -248,7 +245,7 @@ If the JSON doesn't parse, the action doesn't exist, or there is no response wit
 | 2. World without LLM | 11-09 – 11-13 | Map, movement, work, money, buying, rule-based agents | **G1:** 20 agents live through 1 simulation day without errors (logs + DB) |
 | 3. LLM + UI | 11-16 – 11-20 | Ollama decisions, conversations, live map in the browser | **G2:** agents move in the browser, conversation bubbles visible |
 | 4. Economy + memory | 11-23 – 11-27 | Dynamic prices, bank, pgvector memory, relationships, agent panel | **G3:** an agent remembers yesterday's conversation and it shows in its decision |
-| 5. Events + AML | 11-30 – 12-04 | Event panel, reactions, AML scenarios and export, statistics | **G4 (feature freeze):** all features work, no new ones added |
+| 5. Events | 11-30 – 12-04 | Event panel, reactions, statistics | **G4 (feature freeze):** all features work, no new ones added |
 | 6. Quality | 12-07 – 12-11 | Tests, resilience, demo scenario, documentation | **G5 (code freeze):** tag `v1.0`, CI green |
 | 7. Defense | 12-14 – 12-16 | Slides, demo rehearsals, backup video | Ready to defend |
 
@@ -500,7 +497,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 ---
 
-### WEEK 5 – Events and AML
+### WEEK 5 – Events
 
 #### Day 19 – Mon 11-30
 **A**
@@ -514,9 +511,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 20 – Tue 12-01
 **A**
-- [ ] `AgentTown.Aml` Worker: subscribes to `TransactionCompleted` and builds a ledger with the fields AML needs: amounts, frequency, counterparties, timing.
-- [ ] Label schema: `AmlLabel` = `None | Structuring | Smurfing | ShellCompany | RoundTripping`, plus `ScenarioId`.
-- [ ] ADR-004: how AML data is generated and labeled.
+- [ ] Buffer (AML was dropped on 2026-11-07): finish and tune event reactions, LLM decisions and memory.
 
 **B**
 - [ ] Each event's effect in the World rules: collapse = deposits lost or frozen; rival = new building and price cuts; price x2 = price modifier; fire = factory closed for N hours; festival = agents drawn to the park.
@@ -524,12 +519,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 21 – Wed 12-02
 **A**
-- [ ] 2–4 agents with `IsLaunderer=true` and AML scenarios (rule-driven, not LLM, so the data is controlled):
-  - **Structuring:** a large sum deposited in chunks just under a threshold (e.g. < 1000).
-  - **Smurfing:** several "helper" agents send small amounts to a single recipient.
-  - **Shell company:** fake invoices between the owner and his "business".
-  - **Round-tripping:** money goes around a loop and comes back.
-- [ ] Every such transaction gets the matching `AmlLabel`.
+- [ ] Buffer: catch up on anything left from weeks 3–4.
 
 **B**
 - [ ] Relationship graph in the UI (e.g. a simple force layout on canvas or a JS library), colored by affinity.
@@ -537,17 +527,14 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 22 – Thu 12-03
 **A**
-- [ ] `GET /aml/export?format=csv`: export of labeled transactions (from the Aml service or via the Api ⇄).
-- [ ] Baseline detection rules (e.g. N transactions within 24 h just under a threshold, many senders to one recipient). Show precision and recall against the true labels. This is a very strong point for the defense.
-- [ ] Tests for the detection rules.
+- [ ] Buffer: catch up on anything left from weeks 3–4.
 
 **B**
-- [ ] AML tab in the UI: table of suspicious transactions, filter by type, export button, precision/recall cards.
-- [ ] Api endpoints for AML data (using the query service A created ⇄).
+- [ ] Buffer: catch up on anything left from weeks 3–4.
 
 #### Day 23 – Fri 12-04 (integration, feature freeze)
 **Both**
-- [ ] Full run: 50 agents, 2 simulation days, inject all 5 events, check the AML export.
+- [ ] Full run: 50 agents, 2 simulation days, inject all 5 events, check that agents react.
 - [ ] Log all bugs in `docs/progress.md` and assign them by area.
 - [ ] From now on, **no new features**.
 
@@ -559,14 +546,14 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 24 – Mon 12-07
 **A**
-- [ ] Fill unit test gaps: Agents (planner, loop, detector), Llm (parser, scheduler with fake), Aml (scenarios, rules). Target about 70% coverage for logic classes.
+- [ ] Fill unit test gaps: Agents (planner, loop, detector), Llm (parser, scheduler with fake). Target about 70% coverage for logic classes.
 
 **B**
 - [ ] Fill unit test gaps: World (validators, economy, bank, events), Api (endpoints).
 
 #### Day 25 – Tue 12-08
 **A**
-- [ ] Integration test (shared fixture from Day 8) + `FakeLlmClient`, 10 agents, 1 day. Asserts that every agent has memories, there are transactions and AML labels exist.
+- [ ] Integration test (shared fixture from Day 8) + `FakeLlmClient`, 10 agents, 1 day. Asserts that every agent has memories, and there are transactions.
 - [ ] Make sure CI (`.github/workflows/ci.yml`) also runs the integration tests (Testcontainers works on GitHub runners).
 
 **B**
@@ -584,8 +571,8 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 27 – Thu 12-10
 **Both**
-- [ ] `seed/demo-scenario.json`: 30 agents with interesting personalities (a rival baker, a gossip, a saver, a risky entrepreneur, 2 money launderers) and a prepared starting state.
-- [ ] A: final `docs/architecture.md` (diagram, NATS flows, LLM strategy, AML).
+- [ ] `seed/demo-scenario.json`: 30 agents with interesting personalities (a rival baker, a gossip, a saver, a risky entrepreneur) and a prepared starting state.
+- [ ] A: final `docs/architecture.md` (diagram, NATS flows, LLM strategy).
 - [ ] B: final `README.md` (how to run in 3 commands, screenshots).
 
 #### Day 28 – Fri 12-11 (code freeze)
@@ -601,12 +588,12 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 ### WEEK 7 – Defense
 
 #### Day 29 – Mon 12-14
-- [ ] Slides (10–12): problem and idea → inspiration (Stanford, AI Town) and how we differ → architecture → demo → AML results → what we learned → future work.
-- [ ] **A** presents: agent brains, LLM strategy, memory, AML.
+- [ ] Slides (10–12): problem and idea → inspiration (Stanford, AI Town) and how we differ → architecture → demo → what we learned → future work.
+- [ ] **A** presents: agent brains, LLM strategy, memory.
 - [ ] **B** presents: architecture (Aspire, NATS), world rules, UI, the real-time flow.
 
 #### Day 30 – Tue 12-15
-- [ ] Step-by-step demo script (5–7 min): startup → map → agent panel → conversation → inject "Bank collapse" → reactions → statistics → AML tab with precision/recall → Aspire dashboard.
+- [ ] Step-by-step demo script (5–7 min): startup → map → agent panel → conversation → inject "Bank collapse" → reactions → statistics → Aspire dashboard.
 - [ ] 2 timed rehearsals.
 - [ ] **Backup video** (5 min) in case the laptop or the LLM fails during the defense.
 
@@ -623,7 +610,6 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 2. Relationship graph in the UI (Day 21). A list in the agent panel is enough.
 3. Production chain (Day 14). Goods can simply appear in the shop.
 4. Loans (Day 15). Deposits are enough.
-5. AML detection rules (Day 22). The labeled export is enough.
 
 **Never drop:** the NATS architecture, the LLM with fallback, the live map, the event panel, the agent panel. These are the core of the project.
 
@@ -631,11 +617,10 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 ## 9. Likely defense questions
 
-- **Why NATS instead of direct HTTP calls?** Services are decoupled and events are stored in JetStream, so a restarted service continues where it left off. It's also easy to add a new subscriber (e.g. Aml was added without changing World).
+- **Why NATS instead of direct HTTP calls?** Services are decoupled and events are stored in JetStream, so a restarted service continues where it left off. It's also easy to add a new subscriber (e.g. Api subscribes without World knowing about it).
 - **What if the LLM comes up with a forbidden action?** World rejects it (`ActionResult.Success=false`) and the agent tries something else. The world state is never corrupted.
 - **How do 50 agents run on one GPU?** Rules handle routine behavior, and the LLM is called only for interesting moments, with a budget and a queue. The metrics show X calls per minute and Y% fallbacks.
 - **How does memory work?** Embeddings are stored in pgvector, and retrieval ranks by recency, importance and similarity, as in the Stanford paper.
-- **What is the AML data for?** Real bank data is confidential, so labeled synthetic data makes it possible to train and test detection rules and models.
 - **Who did what?** See section 3 and the git history.
 
 ---
@@ -650,6 +635,6 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 | 2. World without LLM | ⬜ | |
 | 3. LLM + UI | ⬜ | |
 | 4. Economy + memory | ⬜ | |
-| 5. Events + AML | ⬜ | |
+| 5. Events | ⬜ | |
 | 6. Quality | ⬜ | |
 | 7. Defense | ⬜ | |

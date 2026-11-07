@@ -9,7 +9,7 @@ public static class Subjects
     public const string StreamName = "TOWN";
     public const string StreamFilter = "town.>";
 
-    /// <summary>World → Agents, Api, Aml. Payload: <see cref="Events.TickOccurred"/>.</summary>
+    /// <summary>World → Agents, Api. Payload: <see cref="Events.TickOccurred"/>.</summary>
     public const string Tick = "town.tick";
 
     /// <summary>Agents → World. Payload: <see cref="Events.ActionRequested"/>.</summary>
@@ -21,7 +21,7 @@ public static class Subjects
     /// <summary>World → Agents, Api. Payload: <see cref="Events.AgentMoved"/>.</summary>
     public const string AgentMoved = "town.agents.moved";
 
-    /// <summary>World → Aml, Api, Agents. Payload: <see cref="Events.TransactionCompleted"/>.</summary>
+    /// <summary>World → Api, Agents. Payload: <see cref="Events.TransactionCompleted"/>.</summary>
     public const string TransactionCompleted = "town.transactions.completed";
 
     /// <summary>Agents → Api, Agents. Payload: <see cref="Events.ConversationMessage"/>.</summary>
@@ -33,7 +33,7 @@ public static class Subjects
     /// <summary>Api → World. Payload: <see cref="Events.WorldEventInjected"/>.</summary>
     public const string EventsInjected = "town.events.injected";
 
-    /// <summary>World → Agents, Api, Aml. Payload: <see cref="Events.WorldEventApplied"/>.</summary>
+    /// <summary>World → Agents, Api. Payload: <see cref="Events.WorldEventApplied"/>.</summary>
     public const string EventsApplied = "town.events.applied";
 
     /// <summary>World (every 10 ticks) → Api. Payload: <see cref="Events.WorldSnapshot"/>.</summary>

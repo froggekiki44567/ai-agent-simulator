@@ -9,5 +9,5 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
     <PackageReference Include="MessagePack" />
   </ItemGroup>
-  <!-- Day 2 (B): add ProjectReferences to World, Agents, Aml, Api and Web so Projects.* types are generated -->
+  <!-- Day 2 (B): add ProjectReferences to World, Agents, Api and Web so Projects.* types are generated -->
 </Project>

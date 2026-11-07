@@ -7,7 +7,7 @@
 ## Context
 Agent decisions come from two sources: a rule-based planner and an LLM. The LLM can hallucinate:
 it may pick an action that doesn't exist, target a closed shop, spend money the agent doesn't have,
-or walk through a wall. Several services (Agents, Api, Aml) also need a consistent view of the town.
+or walk through a wall. Several services (Agents, Api) also need a consistent view of the town.
 If more than one service could change the world state, the services would drift apart and bugs would be
 hard to trace.
 
@@ -25,7 +25,7 @@ from `ActionResult.Delta`.
   straight into the world, and two services writing the same rows need locking.
 - **One monolithic process:** no messaging overhead, but this is what similar projects (Generative
   Agents, AI Town) already do. It also loses independent restarts and makes it harder to add new
-  subscribers such as Aml.
+  subscribers.
 - **Validating in Agents before sending:** the rules would be duplicated in two places, and the
   check would still be based on a possibly stale local copy.
 
