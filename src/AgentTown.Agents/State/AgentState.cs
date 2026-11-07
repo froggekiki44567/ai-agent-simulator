@@ -14,6 +14,7 @@ public sealed class AgentState
 
     public required Guid Id { get; init; }
     public required string Name { get; init; }
+    public int Age { get; init; }
     public required AgentPersonality Personality { get; init; }
     public string? JobId { get; init; }
     public required string HomeId { get; init; }
@@ -39,6 +40,12 @@ public sealed class AgentState
     public PendingAction? PendingAction { get; set; }
 
     public bool IsBusy => PendingAction is not null;
+
+    /// <summary>Tick of the last decision made by the LLM, used for the LLM cooldown.</summary>
+    public long? LastLlmDecisionTick { get; set; }
+
+    /// <summary>True if World rejected the agent's last action.</summary>
+    public bool LastActionFailed { get; set; }
 
     public bool IsAt(string? buildingId) =>
         buildingId is not null && string.Equals(LocationId, buildingId, StringComparison.Ordinal);
