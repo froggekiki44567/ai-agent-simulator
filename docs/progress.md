@@ -17,7 +17,7 @@
 **A (Ervis) tasks done: 29 of 72 (~40%).** Goal: 50% (36 tasks).
 
 ## Done
-- Repo, solution structure, secured dev container (ADR-001), CI, Dependabot, CODEOWNERS.
+- Repo, solution structure, secured dev container (ADR-001).
 - A: `AgentTown.Contracts` (envelope, subjects, events, models) + serialization tests; ADR-002, ADR-003. (`a/contracts`)
 - A: `AgentState`, `NeedsSystem`, `RuleBasedPlanner` with edge cases (no job, no money). (`a/agent-brain`)
 - A: 20 seed agents with loader, validation and tests. (`a/agents-seed`, not merged yet)
@@ -36,6 +36,7 @@
 - A needs B's `Persistence` (`TownDbContext`) for registry DB loading and the `Memories` table.
 
 ## Known issues
+- No CI: `.github/` (workflows, Dependabot, CODEOWNERS) was never committed, so PRs run no checks. Repo infrastructure is B's area.
 - `ConversationService` publishes all lines when the conversation ends (not line by line), so the UI gets them together; B's bubbles can stagger them with `LineIndex`.
 - `a/agents-seed` is not merged into the `a/llm` → `a/agent-loop` line yet; merge it when opening PRs.
 - Branches `a/contracts`, `a/agent-brain`, `a/llm` are stacked and not yet merged into `main` via PRs.
