@@ -296,7 +296,7 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 - [ ] Create the GitHub repo `AgentTown`, add the colleague, commit the starter files (`.devcontainer/`, `.github/`, `.claude/`, `docs/`, root config files, this plan).
 - [ ] Do the "One-time GitHub settings" checklist from `README.md` (branch protection, secret scanning, Dependabot, CODEOWNERS usernames).
 - [x] Create `AgentTown.sln` and all `src/` and `tests/` projects from 2.1 (empty for now).
-- [ ] Run `dotnet restore` once in the dev container and commit the generated `packages.lock.json` files (CI restores in locked mode).
+- [x] Run `dotnet restore` once in the dev container and commit the generated `packages.lock.json` files (CI restores in locked mode). *(done by B in PR #1; `--locked-mode` restore verified 2026-11-07)*
 
 **B (Colleague)** (start once A has pushed the solution)
 - [ ] Open the repo in the dev container and check: the firewall log says "Firewall active", `curl https://example.com` fails, `dotnet restore` works.
