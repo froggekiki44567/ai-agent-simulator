@@ -11,14 +11,15 @@
 - Days 9–11: `AgentTown.Llm` (Ollama + fake client, health check, prompt builder, decision parser, scheduler, metrics), `InterestingMomentDetector`, `AgentDecisionService` (`a/llm`).
 
 ### Where I stopped
-`a/agent-loop` pushed. Day 12 conversations done on `a/conversations` (stacked on `a/agent-loop`). Build clean, 167 tests green. 29 of 72 A tasks done.
+`a/agent-loop` pushed. Day 12 conversations on `a/conversations`; Days 14–15 memory on `a/memory` (stacked on `a/conversations`). Build clean, 197 tests green. 34 of 72 A tasks done.
 
 ### What comes next
-- Days 14–16: memory writer/retriever and relationships (in-memory store first), `IAgentMindQuery`.
+- Day 16: relationships (tone from conversations), in prompt and detector, `IAgentMindQuery`.
 - Day 19: react to `town.events.applied`.
 
 ### What I need from colleague
 - UI: conversation lines arrive together at the end of a conversation; show them one after another by `LineIndex`.
 - `AgentTown.Messaging` with `INatsBus` so the loop can subscribe to `town.tick` and `town.actions.result.*`.
-- `AgentTown.Persistence` (`TownDbContext`) and later the `Memories` table with `vector(768)`.
+- `AgentTown.Persistence` (`TownDbContext`) and the `Memories` table with `vector(768)`; columns match `MemoryRecord` (Id, AgentId, Tick, Kind, Text, Importance, Embedding, LastAccessedTick).
+- Confirm: are agent wallet account ids the agent ids in `TransactionCompleted`?
 - Review the stacked PRs: `a/contracts` → `a/agent-brain` → `a/llm` → `a/agent-loop`, plus `a/agents-seed`.

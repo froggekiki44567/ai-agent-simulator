@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using AgentTown.Agents.Conversations;
+using AgentTown.Agents.Memory;
 using AgentTown.Agents.Planning;
 using AgentTown.Agents.State;
 using AgentTown.Agents.Telemetry;
@@ -38,7 +39,8 @@ public sealed class AgentLoop(
     IAgentEventPublisher publisher,
     AgentTelemetry telemetry,
     AgentLoopOptions options,
-    ILogger<AgentLoop> logger)
+    ILogger<AgentLoop> logger,
+    MemoryWriter? memory = null)
 {
     // Agents whose decision is still running (an LLM call can take several ticks).
     private readonly ConcurrentDictionary<Guid, Task> _deciding = new();
@@ -46,6 +48,9 @@ public sealed class AgentLoop(
     // Agents in a running conversation (both participants), keyed by agent id.
     private readonly ConcurrentDictionary<Guid, Task> _talking = new();
     private TickOccurred? _lastTick;
+
+    // Memory writes started from synchronous handlers (results, transactions).
+    private readonly ConcurrentDictionary<Task, byte> _background = new();
 
     public int DecidingCount => _deciding.Count;
 
@@ -121,8 +126,8 @@ public sealed class AgentLoop(
     public async Task WaitForDecisionsAsync()
     {
         // A finished decision can start a conversation, so loop until nothing is running.
-        while (!_deciding.IsEmpty || !_talking.IsEmpty)
-            await Task.WhenAll(_deciding.Values.Concat(_talking.Values));
+        while (!_deciding.IsEmpty || !_talking.IsEmpty || !_background.IsEmpty)
+            await Task.WhenAll(_deciding.Values.Concat(_talking.Values).Concat(_background.Keys));
     }
 
     /// <summary>Applies World's answer to the agent's local state.</summary>
@@ -144,7 +149,10 @@ public sealed class AgentLoop(
         }
 
         agent.PendingAction = null;
+        var moneyBefore = agent.Money;
+        var statusBefore = agent.Status;
         agent.Apply(result.Delta);
+        var now = _lastTick?.Tick ?? pending.RequestedAtTick;
 
         if (result.Success)
         {
@@ -160,6 +168,39 @@ public sealed class AgentLoop(
             telemetry.RecordActionFailure(pending.Type, result.FailureReason);
             logger.LogInformation("{Agent}: {Action} failed: {Reason}", agent.Name, pending.Type, result.FailureReason);
         }
+
+        if (memory is not null)
+        {
+            var targetName = Guid.TryParse(pending.TargetId, out var targetId) ? registry.Find(targetId)?.Name : null;
+            Track(memory.RememberActionResultAsync(agent, pending, result, agent.Money - moneyBefore, targetName, now));
+            if (agent.Status == AgentStatus.Bankrupt && statusBefore != AgentStatus.Bankrupt)
+                Track(memory.RememberBankruptcyAsync(agent, now));
+        }
+    }
+
+    /// <summary>
+    /// Remembers money that moved for an agent without its own action (wage, shop sale, a gift, interest).
+    /// Assumes World uses agent ids as account ids for agent wallets.
+    /// </summary>
+    public void OnTransaction(TransactionCompleted transaction)
+    {
+        ArgumentNullException.ThrowIfNull(transaction);
+        if (memory is null)
+            return;
+
+        if (registry.Find(transaction.ToAccount) is { } receiver)
+            Track(memory.RememberTransactionAsync(receiver, transaction, received: true));
+        if (transaction.FromAccount != transaction.ToAccount && registry.Find(transaction.FromAccount) is { } payer)
+            Track(memory.RememberTransactionAsync(payer, transaction, received: false));
+    }
+
+    private void Track(Task task)
+    {
+        if (task.IsCompleted)
+            return;
+        _background[task] = 0;
+        _ = task.ContinueWith(t => _background.TryRemove(t, out _), CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     private void StartConversation(AgentState initiator, PendingAction talk)
@@ -192,6 +233,8 @@ public sealed class AgentLoop(
             var outcome = await conversations.RunAsync(initiator, partner, openingLine, scene);
             if (outcome.Lines.Count > 1)
                 needs.ApplyActionCompleted(partner, ActionType.Talk);
+            if (memory is not null)
+                await memory.RememberConversationAsync(outcome, initiator, partner, scene.Tick);
             ConversationFinished?.Invoke(outcome);
         }
         catch (Exception ex)
@@ -215,14 +258,18 @@ public sealed class AgentLoop(
             telemetry.RecordDecision(activity, decision);
 
             if (decision.Source == DecisionSource.Llm)
+            {
                 await publisher.PublishThoughtAsync(decision.ToThought(), input.Tick, cancellationToken);
+                if (memory is not null)
+                    await memory.RememberDecisionAsync(agent, decision, input.Tick, cancellationToken);
+            }
 
             // Idle needs nothing from World, so it isn't sent.
             if (decision.Request.Type == ActionType.Idle)
                 return;
 
             var request = decision.Request;
-            agent.PendingAction = new PendingAction(request.RequestId, request.Type, request.TargetId, input.Tick, request.ItemId, request.Quantity, request.Say);
+            agent.PendingAction = new PendingAction(request.RequestId, request.Type, request.TargetId, input.Tick, request.ItemId, request.Quantity, request.Say, request.Amount);
             if (request.Type is not ActionType.Sleep)
                 agent.Status = agent.Status == AgentStatus.Sleeping ? AgentStatus.Active : agent.Status;
             await publisher.PublishActionAsync(request, input.Tick, cancellationToken);

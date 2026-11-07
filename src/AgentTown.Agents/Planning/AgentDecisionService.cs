@@ -1,3 +1,4 @@
+using AgentTown.Agents.Memory;
 using AgentTown.Agents.State;
 using AgentTown.Contracts.Events;
 using AgentTown.Contracts.Model;
@@ -37,7 +38,8 @@ public sealed class AgentDecisionService(
     LlmScheduler scheduler,
     PromptBuilder promptBuilder,
     DecisionParser parser,
-    LlmMetrics metrics)
+    LlmMetrics metrics,
+    MemoryRetriever? memories = null)
 {
     public const int RuleImportance = 1;
 
@@ -58,7 +60,10 @@ public sealed class AgentDecisionService(
             return FromRules(agent, ruleAction, moment, nameof(LlmFailure.BudgetExceeded));
         }
 
-        var prompt = promptBuilder.Build(BuildContext(agent, input, moment));
+        var remembered = memories is null
+            ? []
+            : await memories.RetrieveForPromptAsync(agent.Id, MemoryQuery(agent, input, moment), input.Tick, cancellationToken);
+        var prompt = promptBuilder.Build(BuildContext(agent, input, moment, remembered));
         var call = await scheduler.RunReservedAsync(prompt, cancellationToken);
         if (!call.Success)
             return FromRules(agent, ruleAction, moment, call.Failure.ToString());
@@ -82,7 +87,18 @@ public sealed class AgentDecisionService(
     private static AgentDecision FromRules(AgentState agent, PlannedAction action, InterestingMoment? moment, string? fallbackReason) =>
         new(action.ToRequest(agent.Id, DecisionSource.Rules), action.Reason, RuleImportance, moment, fallbackReason);
 
-    private static AgentPromptContext BuildContext(AgentState agent, DecisionInput input, InterestingMoment moment) => new()
+    /// <summary>What the agent is thinking about right now; memories similar to this are more relevant.</summary>
+    private static string MemoryQuery(AgentState agent, DecisionInput input, InterestingMoment moment)
+    {
+        var parts = new List<string> { moment.Description, $"at {agent.LocationId ?? "the street"}" };
+        if (input.NearbyAgents.Count > 0)
+            parts.Add("with " + string.Join(", ", input.NearbyAgents.Select(a => a.Name)));
+        if (input.TownEvent is not null)
+            parts.Add(input.TownEvent);
+        return string.Join(". ", parts);
+    }
+
+    private static AgentPromptContext BuildContext(AgentState agent, DecisionInput input, InterestingMoment moment, IReadOnlyList<string> remembered) => new()
     {
         Name = agent.Name,
         Age = agent.Age,
@@ -104,6 +120,7 @@ public sealed class AgentDecisionService(
         NearbyAgents = input.NearbyAgents,
         NearbyBuildings = input.KnownBuildings,
         Situation = moment.Description,
+        Memories = remembered,
         RecentEvents = input.TownEvent is null ? [] : [input.TownEvent],
     };
 }
