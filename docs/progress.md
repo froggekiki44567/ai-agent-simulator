@@ -10,7 +10,7 @@
 | 2. World without LLM | ⬜ | |
 | 3. LLM + UI | ⬜ | |
 | 4. Economy + memory | ⬜ | |
-| 5. Events + AML | ⬜ | |
+| 5. Events | ⬜ | |
 | 6. Quality | ⬜ | |
 | 7. Defense | ⬜ | |
 
