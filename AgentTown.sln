@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgentTown.Api.Tests", "test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgentTown.IntegrationTests", "tests/AgentTown.IntegrationTests/AgentTown.IntegrationTests.csproj", "{573809E7-2769-4FAD-94E4-3F63031CEF36}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgentTown.Contracts.Tests", "tests/AgentTown.Contracts.Tests/AgentTown.Contracts.Tests.csproj", "{6D0F2C3A-8B4E-4C1F-9A7D-2E5B8C9F1A30}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,10 @@ Global
 		{573809E7-2769-4FAD-94E4-3F63031CEF36}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{573809E7-2769-4FAD-94E4-3F63031CEF36}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{573809E7-2769-4FAD-94E4-3F63031CEF36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D0F2C3A-8B4E-4C1F-9A7D-2E5B8C9F1A30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D0F2C3A-8B4E-4C1F-9A7D-2E5B8C9F1A30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D0F2C3A-8B4E-4C1F-9A7D-2E5B8C9F1A30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D0F2C3A-8B4E-4C1F-9A7D-2E5B8C9F1A30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
