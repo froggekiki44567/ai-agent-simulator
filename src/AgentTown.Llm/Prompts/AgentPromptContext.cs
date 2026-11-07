@@ -34,11 +34,16 @@ public sealed record AgentPromptContext
     /// <summary>Most relevant memories, newest first (filled in from Day 15).</summary>
     public IReadOnlyList<string> Memories { get; init; } = [];
 
+    /// <summary>
+    /// People the agent knows who are not nearby, e.g. "Petras: a good friend who owes you 20.00 EUR (last met day 1, 12:00)".
+    /// </summary>
+    public IReadOnlyList<string> KnownPeople { get; init; } = [];
+
     /// <summary>Recent town events (filled in from Day 19).</summary>
     public IReadOnlyList<string> RecentEvents { get; init; } = [];
 }
 
-/// <param name="Relationship">Short description, e.g. "good friend" (filled in from Day 16).</param>
+/// <param name="Relationship">How the agent sees this person, e.g. "a good friend who owes you 20.00 EUR", or null if they never met.</param>
 public sealed record NearbyAgent(Guid Id, string Name, string? Relationship = null);
 
 public sealed record NearbyBuilding(string Id, string Type, bool IsOpen);

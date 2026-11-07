@@ -1,5 +1,6 @@
 using AgentTown.Agents.Loop;
 using AgentTown.Agents.Memory;
+using AgentTown.Agents.Relationships;
 using AgentTown.Agents.State;
 using AgentTown.Contracts.Events;
 using AgentTown.Llm.Conversations;
@@ -50,7 +51,8 @@ public sealed class ConversationService(
     IAgentEventPublisher publisher,
     ConversationOptions options,
     ILogger<ConversationService> logger,
-    MemoryRetriever? memories = null)
+    MemoryRetriever? memories = null,
+    RelationshipService? relationships = null)
 {
     /// <param name="openingLine">What the initiator already said in its <c>Talk</c> action (line 0), if anything.</param>
     public async Task<ConversationOutcome> RunAsync(
@@ -84,10 +86,14 @@ public sealed class ConversationService(
                 ? []
                 : await memories.RetrieveForPromptAsync(speaker.Id, $"talking with {listener.Name}", scene.Tick, cancellationToken);
 
+            var relationship = relationships is null
+                ? null
+                : await relationships.DescribeAsync(speaker.Id, listener.Id, speaker.Name, cancellationToken);
+
             var prompt = prompts.Build(new ConversationPromptContext
             {
                 Speaker = ToParticipant(speaker),
-                Listener = ToParticipant(listener),
+                Listener = ToParticipant(listener) with { Relationship = relationship },
                 History = lines.Select(l => new ConversationLine(l.Speaker.Name, l.Text)).ToArray(),
                 PlaceId = scene.PlaceId,
                 Day = scene.Day,

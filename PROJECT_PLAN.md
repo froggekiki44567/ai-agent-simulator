@@ -469,9 +469,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 16 – Wed 11-25
 **A**
-- [ ] `Relationships`: affinity changes after conversations (the LLM rates the tone -5…+5) and transactions.
-- [ ] Relationships are included in the prompt ("Jonas is a good friend, Petras owes you money") and in `InterestingMomentDetector`.
-- [ ] Data for the Api: A creates `IAgentMindQuery` (memories, relationships) for B to use in the Api ⇄.
+- [x] `Relationships`: affinity changes after conversations (the LLM rates the tone -5…+5) and transactions.
+- [x] Relationships are included in the prompt ("Jonas is a good friend, Petras owes you money") and in `InterestingMomentDetector`.
+- [x] Data for the Api: A creates `IAgentMindQuery` (memories, relationships) for B to use in the Api ⇄.
 
 **B**
 - [ ] Agent panel in the UI: clicking an agent shows money, job, need bars, status, relationships, the last 10 memories and the latest thought.

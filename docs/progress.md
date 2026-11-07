@@ -9,12 +9,12 @@
 | 1. Foundation | 🔄 In progress | Contracts + ADR-002/003 done (A). AppHost/Messaging/Persistence pending (B) |
 | 2. World without LLM | 🔄 In progress | Agents side done in memory (state, needs, planner, loop, telemetry). World side on `b/world-foundation` |
 | 3. LLM + UI | 🔄 In progress | LLM client, prompts, parser, scheduler, interesting-moment detector done |
-| 4. Economy + memory | ⬜ | |
+| 4. Economy + memory | 🔄 In progress | A: memory and relationships done (in-memory stores). B: economy/bank pending |
 | 5. Events | ⬜ | |
 | 6. Quality | ⬜ | |
 | 7. Defense | ⬜ | |
 
-**A (Ervis) tasks done: 34 of 72 (~47%).** Goal: 50% (36 tasks).
+**A (Ervis) tasks done: 37 of 72 (~51%).** Goal of 50% (36 tasks) reached.
 
 ## Done
 - Repo, solution structure, secured dev container (ADR-001).
@@ -26,14 +26,18 @@
 - A: `AgentLoop` (one active action per agent, ActionResult handling, pending timeout, LLM in background), `AgentRegistry` (in-memory), `TownDirectory`, `AgentTelemetry` (`agents.decisions`, `agents.action_failures`, decision spans), DI wiring, `AgentThought` after LLM decisions. Tests: loop, wiring, 10 agents through one day. (`a/agent-loop`)
 - A: Conversations: `ConversationPromptBuilder` + `ConversationReplyParser` (Llm), `ConversationService` (2–4 lines, turns, early end, agreement, tone per speaker, LLM failure ends it cleanly). An accepted `Talk` starts the conversation in the background; both agents are busy until it ends and both gain Social. `AgentLoop.ConversationFinished` event for memory/relationships. (`a/conversations`)
 - A: Memory (`a/memory`): `MemoryWriter` (action results, LLM decisions, conversations for both sides, transactions, bankruptcy; embeddings via `EmbedAsync`), importance heuristic (`MemoryImportance`), `MemoryRetriever` (recency + importance + relevance, min-max normalized, configurable weights, top 5), memories in the decision and conversation prompts. `IMemoryStore` with an in-memory store (max 500 per agent) until the `Memories` table exists.
-- Tests: 197 passing (Contracts 29, Llm 59, Agents 109).
+- A: Relationships (`a/relationships`): `RelationshipService` (affinity -100…100 from conversation tone × 2 per side; agent↔agent `Transfer` raises the receiver's affinity and books a debt in `Balance`, paying back evens it out), labels ("a good friend who owes you 20.00 EUR"), in the decision prompt (nearby people + "People you know (not here)") and the conversation prompt, and in `InterestingMomentDetector` (`DebtorNearby`; a friend nearby triggers `SocialChance` at Social < 70). `IRelationshipStore` with an in-memory store until the `Relationships` table exists.
+- A: `IAgentMindQuery` + `MemoryView` / `RelationshipView` in `AgentTown.Contracts.Mind` (new, additive); `AgentMindQuery` implementation in Agents over the stores.
+- Tests: 230 passing (Contracts 29, Llm 60, Agents 141).
 
 ## In progress / next (A)
-- Relationships and `IAgentMindQuery`; reactions to world events.
+- Day 17: daily reflections (needs no B work); restore state after restart needs Persistence.
+- Day 19: reactions to `town.events.applied` (can be done with the in-memory loop and tests before B's NATS is ready).
 
 ## Blockers
 - A needs B's `INatsBus` (Messaging) to hook `AgentLoop` to `town.tick` / `town.actions.result.*`.
-- A needs B's `Persistence` (`TownDbContext`) for registry DB loading and the `Memories` table.
+- A needs B's `Persistence` (`TownDbContext`) for registry DB loading and the `Memories` / `Relationships` tables.
+- `IAgentMindQuery` is implemented inside the Agents service (in-memory stores). The Api runs in another process, so for `GET /api/agents/{id}/memories|relationships` B needs either the DB tables (Api implements the interface over them) or an Agents endpoint/NATS request. Decide together.
 
 ## Known issues
 - No CI: `.github/` (workflows, Dependabot, CODEOWNERS) was never committed, so PRs run no checks. Repo infrastructure is B's area.

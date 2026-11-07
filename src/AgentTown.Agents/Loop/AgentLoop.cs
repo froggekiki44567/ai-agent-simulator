@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using AgentTown.Agents.Conversations;
 using AgentTown.Agents.Memory;
 using AgentTown.Agents.Planning;
+using AgentTown.Agents.Relationships;
 using AgentTown.Agents.State;
 using AgentTown.Agents.Telemetry;
 using AgentTown.Contracts.Events;
@@ -40,7 +41,8 @@ public sealed class AgentLoop(
     AgentTelemetry telemetry,
     AgentLoopOptions options,
     ILogger<AgentLoop> logger,
-    MemoryWriter? memory = null)
+    MemoryWriter? memory = null,
+    RelationshipService? relationships = null)
 {
     // Agents whose decision is still running (an LLM call can take several ticks).
     private readonly ConcurrentDictionary<Guid, Task> _deciding = new();
@@ -179,19 +181,27 @@ public sealed class AgentLoop(
     }
 
     /// <summary>
-    /// Remembers money that moved for an agent without its own action (wage, shop sale, a gift, interest).
+    /// Remembers money that moved for an agent without its own action (wage, shop sale, a gift, interest),
+    /// and updates the relationship when it moved between two agents.
     /// Assumes World uses agent ids as account ids for agent wallets.
     /// </summary>
     public void OnTransaction(TransactionCompleted transaction)
     {
         ArgumentNullException.ThrowIfNull(transaction);
-        if (memory is null)
-            return;
 
-        if (registry.Find(transaction.ToAccount) is { } receiver)
-            Track(memory.RememberTransactionAsync(receiver, transaction, received: true));
-        if (transaction.FromAccount != transaction.ToAccount && registry.Find(transaction.FromAccount) is { } payer)
-            Track(memory.RememberTransactionAsync(payer, transaction, received: false));
+        var receiver = registry.Find(transaction.ToAccount);
+        var payer = transaction.FromAccount != transaction.ToAccount ? registry.Find(transaction.FromAccount) : null;
+
+        if (memory is not null)
+        {
+            if (receiver is not null)
+                Track(memory.RememberTransactionAsync(receiver, transaction, received: true));
+            if (payer is not null)
+                Track(memory.RememberTransactionAsync(payer, transaction, received: false));
+        }
+
+        if (relationships is not null && receiver is not null && payer is not null)
+            Track(relationships.ApplyTransferAsync(payer.Id, receiver.Id, transaction));
     }
 
     private void Track(Task task)
@@ -235,6 +245,8 @@ public sealed class AgentLoop(
                 needs.ApplyActionCompleted(partner, ActionType.Talk);
             if (memory is not null)
                 await memory.RememberConversationAsync(outcome, initiator, partner, scene.Tick);
+            if (relationships is not null)
+                await relationships.ApplyConversationAsync(outcome, scene.Tick);
             ConversationFinished?.Invoke(outcome);
         }
         catch (Exception ex)

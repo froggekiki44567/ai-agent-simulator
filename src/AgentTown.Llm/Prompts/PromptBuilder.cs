@@ -80,6 +80,13 @@ public sealed class PromptBuilder
         foreach (var agent in context.NearbyAgents)
             text.AppendLine($"- {agent.Name} (id {agent.Id}){(agent.Relationship is null ? "" : $", {agent.Relationship}")}");
 
+        if (context.KnownPeople.Count > 0)
+        {
+            text.AppendLine("People you know (not here):");
+            foreach (var person in context.KnownPeople)
+                text.AppendLine($"- {person}");
+        }
+
         if (context.Memories.Count > 0)
         {
             text.AppendLine();
