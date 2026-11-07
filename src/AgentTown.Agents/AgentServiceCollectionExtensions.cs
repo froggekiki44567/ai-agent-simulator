@@ -1,9 +1,11 @@
+using AgentTown.Agents.Conversations;
 using AgentTown.Agents.Loop;
 using AgentTown.Agents.Planning;
 using AgentTown.Agents.State;
 using AgentTown.Agents.Telemetry;
 using AgentTown.Llm;
 using AgentTown.Llm.Client;
+using AgentTown.Llm.Conversations;
 using AgentTown.Llm.Decisions;
 using AgentTown.Llm.Prompts;
 using AgentTown.Llm.Scheduling;
@@ -25,6 +27,7 @@ public static class AgentServiceCollectionExtensions
         services.AddSingleton(Bind<PlannerOptions>(configuration, PlannerOptions.SectionName));
         services.AddSingleton(Bind<InterestingMomentOptions>(configuration, InterestingMomentOptions.SectionName));
         services.AddSingleton(Bind<AgentLoopOptions>(configuration, AgentLoopOptions.SectionName));
+        services.AddSingleton(Bind<ConversationOptions>(configuration, ConversationOptions.SectionName));
         services.AddSingleton(Bind<LlmOptions>(configuration, LlmOptions.SectionName));
 
         services.AddSingleton<NeedsSystem>();
@@ -35,6 +38,9 @@ public static class AgentServiceCollectionExtensions
         services.AddSingleton<LlmMetrics>();
         services.AddSingleton<LlmScheduler>();
         services.AddSingleton<AgentDecisionService>();
+        services.AddSingleton<ConversationPromptBuilder>();
+        services.AddSingleton<ConversationReplyParser>();
+        services.AddSingleton<ConversationService>();
         services.AddSingleton<AgentTelemetry>();
         services.AddSingleton<AgentRegistry>();
         services.AddSingleton<TownDirectory>();

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using AgentTown.Agents.Conversations;
 using AgentTown.Agents.Planning;
 using AgentTown.Agents.State;
 using AgentTown.Agents.Telemetry;
@@ -32,6 +33,7 @@ public sealed class AgentLoop(
     TownDirectory town,
     NeedsSystem needs,
     AgentDecisionService decisions,
+    ConversationService conversations,
     LlmScheduler scheduler,
     IAgentEventPublisher publisher,
     AgentTelemetry telemetry,
@@ -41,7 +43,16 @@ public sealed class AgentLoop(
     // Agents whose decision is still running (an LLM call can take several ticks).
     private readonly ConcurrentDictionary<Guid, Task> _deciding = new();
 
+    // Agents in a running conversation (both participants), keyed by agent id.
+    private readonly ConcurrentDictionary<Guid, Task> _talking = new();
+    private TickOccurred? _lastTick;
+
     public int DecidingCount => _deciding.Count;
+
+    public bool IsTalking(Guid agentId) => _talking.ContainsKey(agentId);
+
+    /// <summary>Raised after each finished conversation (memories and relationships hook in here).</summary>
+    public event Action<ConversationOutcome>? ConversationFinished;
 
     /// <summary>
     /// Handles one tick. Rule-based decisions finish immediately; LLM decisions keep running in the
@@ -51,6 +62,7 @@ public sealed class AgentLoop(
     {
         ArgumentNullException.ThrowIfNull(tick);
         scheduler.OnTick(tick.Tick);
+        _lastTick = tick;
         var buildings = town.DescribeBuildings(tick.Hour);
 
         foreach (var agent in registry.All)
@@ -68,7 +80,7 @@ public sealed class AgentLoop(
                 agent.LastActionFailed = true;
             }
 
-            if (_deciding.ContainsKey(agent.Id))
+            if (_deciding.ContainsKey(agent.Id) || _talking.ContainsKey(agent.Id))
                 continue;
 
             var input = new DecisionInput(
@@ -106,7 +118,12 @@ public sealed class AgentLoop(
     }
 
     /// <summary>Waits until all running (LLM) decisions are done. Mostly for tests and shutdown.</summary>
-    public Task WaitForDecisionsAsync() => Task.WhenAll(_deciding.Values);
+    public async Task WaitForDecisionsAsync()
+    {
+        // A finished decision can start a conversation, so loop until nothing is running.
+        while (!_deciding.IsEmpty || !_talking.IsEmpty)
+            await Task.WhenAll(_deciding.Values.Concat(_talking.Values));
+    }
 
     /// <summary>Applies World's answer to the agent's local state.</summary>
     public void OnActionResult(ActionResult result)
@@ -134,12 +151,58 @@ public sealed class AgentLoop(
             agent.LastActionFailed = false;
             needs.ApplyActionCompleted(agent, pending.Type);
             agent.ApplyInventoryChange(pending.Type, pending.ItemId, pending.Quantity);
+            if (pending.Type == ActionType.Talk)
+                StartConversation(agent, pending);
         }
         else
         {
             agent.LastActionFailed = true;
             telemetry.RecordActionFailure(pending.Type, result.FailureReason);
             logger.LogInformation("{Agent}: {Action} failed: {Reason}", agent.Name, pending.Type, result.FailureReason);
+        }
+    }
+
+    private void StartConversation(AgentState initiator, PendingAction talk)
+    {
+        if (!Guid.TryParse(talk.TargetId, out var partnerId) || registry.Find(partnerId) is not { } partner || partner.Id == initiator.Id)
+        {
+            logger.LogWarning("{Agent}: Talk target {Target} is not a known agent.", initiator.Name, talk.TargetId);
+            return;
+        }
+
+        if (_talking.ContainsKey(initiator.Id) || _talking.ContainsKey(partner.Id))
+        {
+            logger.LogDebug("{Agent} or {Partner} is already in a conversation.", initiator.Name, partner.Name);
+            return;
+        }
+
+        var tick = _lastTick ?? new TickOccurred(talk.RequestedAtTick, 1, 0, 0);
+        var scene = new ConversationScene(tick.Tick, tick.Day, tick.Hour, tick.Minute, initiator.LocationId);
+
+        var done = new TaskCompletionSource();
+        _talking[initiator.Id] = done.Task;
+        _talking[partner.Id] = done.Task;
+        _ = RunConversationAsync(initiator, partner, talk.Say, scene, done);
+    }
+
+    private async Task RunConversationAsync(AgentState initiator, AgentState partner, string? openingLine, ConversationScene scene, TaskCompletionSource done)
+    {
+        try
+        {
+            var outcome = await conversations.RunAsync(initiator, partner, openingLine, scene);
+            if (outcome.Lines.Count > 1)
+                needs.ApplyActionCompleted(partner, ActionType.Talk);
+            ConversationFinished?.Invoke(outcome);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Conversation {Initiator} → {Partner} failed.", initiator.Name, partner.Name);
+        }
+        finally
+        {
+            _talking.TryRemove(initiator.Id, out _);
+            _talking.TryRemove(partner.Id, out _);
+            done.TrySetResult();
         }
     }
 
@@ -159,7 +222,7 @@ public sealed class AgentLoop(
                 return;
 
             var request = decision.Request;
-            agent.PendingAction = new PendingAction(request.RequestId, request.Type, request.TargetId, input.Tick, request.ItemId, request.Quantity);
+            agent.PendingAction = new PendingAction(request.RequestId, request.Type, request.TargetId, input.Tick, request.ItemId, request.Quantity, request.Say);
             if (request.Type is not ActionType.Sleep)
                 agent.Status = agent.Status == AgentStatus.Sleeping ? AgentStatus.Active : agent.Status;
             await publisher.PublishActionAsync(request, input.Tick, cancellationToken);
