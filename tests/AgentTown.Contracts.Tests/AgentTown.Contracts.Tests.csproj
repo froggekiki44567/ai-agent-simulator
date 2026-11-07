@@ -7,7 +7,9 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="NSubstitute" />
-    <ProjectReference Include="..\..\src\AgentTown.Aml\AgentTown.Aml.csproj" />
+    <ProjectReference Include="..\..\src\AgentTown.Contracts\AgentTown.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
   </ItemGroup>
 </Project>
