@@ -10,11 +10,12 @@ internal static class TestAgents
         double energy = 80,
         double social = 80,
         decimal money = 100,
-        string? jobId = "job-baker") =>
+        string? jobId = "job-baker",
+        string name = "Jonas") =>
         new()
         {
             Id = Guid.NewGuid(),
-            Name = "Jonas",
+            Name = name,
             Personality = new AgentPersonality(["kind", "proud", "calm"], "Bake bread", "Short"),
             JobId = jobId,
             HomeId = "home-1",

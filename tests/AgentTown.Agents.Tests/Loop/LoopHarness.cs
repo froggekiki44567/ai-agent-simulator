@@ -1,3 +1,4 @@
+using AgentTown.Agents.Conversations;
 using AgentTown.Agents.Loop;
 using AgentTown.Agents.Planning;
 using AgentTown.Agents.State;
@@ -5,6 +6,7 @@ using AgentTown.Agents.Telemetry;
 using AgentTown.Contracts.Events;
 using AgentTown.Llm;
 using AgentTown.Llm.Client;
+using AgentTown.Llm.Conversations;
 using AgentTown.Llm.Decisions;
 using AgentTown.Llm.Prompts;
 using AgentTown.Llm.Scheduling;
@@ -23,9 +25,10 @@ internal sealed class LoopHarness : IDisposable
     public LlmMetrics LlmMetrics { get; } = new();
     public AgentTelemetry Telemetry { get; } = new();
     public LlmScheduler Scheduler { get; }
+    public ConversationService Conversations { get; }
     public AgentLoop Loop { get; }
 
-    public LoopHarness(int maxLlmCallsPerTick = 4, int pendingTimeoutTicks = 80, InterestingMomentOptions? moments = null)
+    public LoopHarness(int maxLlmCallsPerTick = 4, int pendingTimeoutTicks = 80, InterestingMomentOptions? moments = null, ConversationOptions? conversations = null)
     {
         Town.AddBuilding(new("home-1", "Home", 0, 0))
             .AddBuilding(new("home-2", "Home", 0, 0))
@@ -39,7 +42,10 @@ internal sealed class LoopHarness : IDisposable
             new InterestingMomentDetector(moments ?? new InterestingMomentOptions()),
             Scheduler, new PromptBuilder(), new DecisionParser(), LlmMetrics);
 
-        Loop = new AgentLoop(Registry, Town, Needs, decisions, Scheduler, Publisher, Telemetry,
+        Conversations = new ConversationService(Scheduler, new ConversationPromptBuilder(), new ConversationReplyParser(),
+            Publisher, conversations ?? new ConversationOptions(), NullLogger<ConversationService>.Instance);
+
+        Loop = new AgentLoop(Registry, Town, Needs, decisions, Conversations, Scheduler, Publisher, Telemetry,
             new AgentLoopOptions { PendingTimeoutTicks = pendingTimeoutTicks }, NullLogger<AgentLoop>.Instance);
     }
 
