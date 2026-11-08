@@ -10,7 +10,7 @@ public sealed record WorldEventInjected(
     IReadOnlyDictionary<string, string> Parameters,
     string Description);
 
-/// <summary>World → Agents, Api, Aml: the event's effect has been applied to the world.</summary>
+/// <summary>World → Agents, Api: the event's effect has been applied to the world.</summary>
 public sealed record WorldEventApplied(
     Guid EventId,
     string Type,

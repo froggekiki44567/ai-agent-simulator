@@ -33,7 +33,7 @@ public sealed record ActionResult(
 /// <summary>World → Api: an agent moved one cell.</summary>
 public sealed record AgentMoved(Guid AgentId, int FromX, int FromY, int ToX, int ToY);
 
-/// <summary>World → Aml, Api, Agents: any movement of money.</summary>
+/// <summary>World → Api, Agents: any movement of money.</summary>
 /// <param name="Kind">See <see cref="TransactionKinds"/>.</param>
 public sealed record TransactionCompleted(
     Guid TxId,
