@@ -10,4 +10,7 @@
     <PackageReference Include="NSubstitute" />
     <ProjectReference Include="..\..\src\AgentTown.Agents\AgentTown.Agents.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\seed\agents.json" Link="seed\agents.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
