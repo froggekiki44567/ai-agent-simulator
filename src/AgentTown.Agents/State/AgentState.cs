@@ -98,4 +98,4 @@ public sealed class AgentState
 public sealed record AgentPersonality(IReadOnlyList<string> Traits, string Goal, string SpeakingStyle);
 
 /// <summary>An action that was sent to World and is waiting for its result.</summary>
-public sealed record PendingAction(Guid RequestId, ActionType Type, string? TargetId, long RequestedAtTick, string? ItemId = null, int Quantity = 0, string? Say = null);
+public sealed record PendingAction(Guid RequestId, ActionType Type, string? TargetId, long RequestedAtTick, string? ItemId = null, int Quantity = 0, string? Say = null, decimal Amount = 0);

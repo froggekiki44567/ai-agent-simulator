@@ -24,6 +24,7 @@ public class WiringTests
         using var provider = Build([]);
 
         provider.GetRequiredService<AgentLoop>().Should().NotBeNull();
+        provider.GetRequiredService<AgentTown.Contracts.Mind.IAgentMindQuery>().Should().NotBeNull();
         provider.GetRequiredService<ILlmClient>().Should().BeOfType<FakeLlmClient>();
     }
 

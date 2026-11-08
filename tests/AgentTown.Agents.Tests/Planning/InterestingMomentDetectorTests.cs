@@ -82,4 +82,43 @@ public class InterestingMomentDetectorTests
         moment!.Kind.Should().Be(MomentKind.TownEvent);
         moment.Description.Should().Contain("The bank collapsed.");
     }
+
+    [Fact]
+    public void Debtor_nearby_is_interesting()
+    {
+        var agent = TestAgents.Create(social: 90);
+
+        var moment = _detector.Detect(agent, new MomentInput(100, false, 1, NearbyRelations: [new("Petras", 0, 20m)]));
+
+        moment!.Kind.Should().Be(MomentKind.DebtorNearby);
+        moment.Description.Should().Be("Petras is here and still owes you 20.00 EUR.");
+    }
+
+    [Fact]
+    public void Small_debt_or_own_debt_is_not_a_reason()
+    {
+        var agent = TestAgents.Create(social: 90);
+
+        _detector.Detect(agent, new MomentInput(100, false, 2, NearbyRelations: [new("Petras", 0, 2m), new("Ona", 0, -50m)])).Should().BeNull();
+    }
+
+    [Fact]
+    public void Friend_nearby_makes_the_agent_want_to_talk_sooner()
+    {
+        var agent = TestAgents.Create(social: 60);
+
+        _detector.Detect(agent, new MomentInput(100, false, 1)).Should().BeNull("a stranger is not enough at Social 60");
+        var moment = _detector.Detect(agent, new MomentInput(100, false, 1, NearbyRelations: [new("Ona", 40, 0)]));
+
+        moment!.Kind.Should().Be(MomentKind.SocialChance);
+        moment.Description.Should().Be("Your friend Ona is here.");
+    }
+
+    [Fact]
+    public void Friend_nearby_does_not_matter_when_social_is_high()
+    {
+        var agent = TestAgents.Create(social: 90);
+
+        _detector.Detect(agent, new MomentInput(100, false, 1, NearbyRelations: [new("Ona", 80, 0)])).Should().BeNull();
+    }
 }

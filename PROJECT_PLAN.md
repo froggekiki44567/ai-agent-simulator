@@ -447,9 +447,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 14 – Mon 11-23
 **A**
-- [ ] `Memories` table with `vector(768)` (migration in Persistence ⇄ coordinate with B).
-- [ ] `MemoryWriter`: writes observations (action results, conversations, transactions, events) with an embedding via `EmbedAsync`.
-- [ ] Importance: a heuristic for actions (purchase 2, conversation 4, bankruptcy 9); LLM decisions use the `importance` field.
+- [ ] `Memories` table with `vector(768)` (migration in Persistence ⇄ coordinate with B). *(A side ready: `MemoryRecord` + `IMemoryStore`, in-memory for now; table waits for B's Persistence)*
+- [x] `MemoryWriter`: writes observations (action results, conversations, transactions, events) with an embedding via `EmbedAsync`.
+- [x] Importance: a heuristic for actions (purchase 2, conversation 4, bankruptcy 9); LLM decisions use the `importance` field.
 
 **B**
 - [ ] Economy v2: dynamic prices (supply and demand over the last N hours), restocking from the factory.
@@ -458,9 +458,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 15 – Tue 11-24
 **A**
-- [ ] `MemoryRetriever`: top-K by `recency + importance + similarity` (as in the Stanford paper). Configurable weights.
-- [ ] Plug it into `PromptBuilder` (the 5 most relevant memories).
-- [ ] Test with fake embeddings: a more important and more recent memory ranks higher.
+- [x] `MemoryRetriever`: top-K by `recency + importance + similarity` (as in the Stanford paper). Configurable weights.
+- [x] Plug it into `PromptBuilder` (the 5 most relevant memories).
+- [x] Test with fake embeddings: a more important and more recent memory ranks higher.
 
 **B**
 - [ ] Bank: `Deposit`, `Withdraw`, `TakeLoan` (daily interest), `BankAccounts`.
@@ -469,9 +469,9 @@ Each day has tasks for A and B. Tasks that depend on the other person's work are
 
 #### Day 16 – Wed 11-25
 **A**
-- [ ] `Relationships`: affinity changes after conversations (the LLM rates the tone -5…+5) and transactions.
-- [ ] Relationships are included in the prompt ("Jonas is a good friend, Petras owes you money") and in `InterestingMomentDetector`.
-- [ ] Data for the Api: A creates `IAgentMindQuery` (memories, relationships) for B to use in the Api ⇄.
+- [x] `Relationships`: affinity changes after conversations (the LLM rates the tone -5…+5) and transactions.
+- [x] Relationships are included in the prompt ("Jonas is a good friend, Petras owes you money") and in `InterestingMomentDetector`.
+- [x] Data for the Api: A creates `IAgentMindQuery` (memories, relationships) for B to use in the Api ⇄.
 
 **B**
 - [ ] Agent panel in the UI: clicking an agent shows money, job, need bars, status, relationships, the last 10 memories and the latest thought.

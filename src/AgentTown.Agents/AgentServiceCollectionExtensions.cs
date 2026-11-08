@@ -1,8 +1,12 @@
 using AgentTown.Agents.Conversations;
 using AgentTown.Agents.Loop;
+using AgentTown.Agents.Memory;
+using AgentTown.Agents.Mind;
 using AgentTown.Agents.Planning;
+using AgentTown.Agents.Relationships;
 using AgentTown.Agents.State;
 using AgentTown.Agents.Telemetry;
+using AgentTown.Contracts.Mind;
 using AgentTown.Llm;
 using AgentTown.Llm.Client;
 using AgentTown.Llm.Conversations;
@@ -28,6 +32,8 @@ public static class AgentServiceCollectionExtensions
         services.AddSingleton(Bind<InterestingMomentOptions>(configuration, InterestingMomentOptions.SectionName));
         services.AddSingleton(Bind<AgentLoopOptions>(configuration, AgentLoopOptions.SectionName));
         services.AddSingleton(Bind<ConversationOptions>(configuration, ConversationOptions.SectionName));
+        services.AddSingleton(Bind<MemoryOptions>(configuration, MemoryOptions.SectionName));
+        services.AddSingleton(Bind<RelationshipOptions>(configuration, RelationshipOptions.SectionName));
         services.AddSingleton(Bind<LlmOptions>(configuration, LlmOptions.SectionName));
 
         services.AddSingleton<NeedsSystem>();
@@ -41,6 +47,14 @@ public static class AgentServiceCollectionExtensions
         services.AddSingleton<ConversationPromptBuilder>();
         services.AddSingleton<ConversationReplyParser>();
         services.AddSingleton<ConversationService>();
+        // In-memory until the Memories table (pgvector) exists in Persistence.
+        services.AddSingleton<IMemoryStore, InMemoryMemoryStore>();
+        services.AddSingleton<MemoryWriter>();
+        services.AddSingleton<MemoryRetriever>();
+        // In-memory until the Relationships table exists in Persistence.
+        services.AddSingleton<IRelationshipStore, InMemoryRelationshipStore>();
+        services.AddSingleton<RelationshipService>();
+        services.AddSingleton<IAgentMindQuery, AgentMindQuery>();
         services.AddSingleton<AgentTelemetry>();
         services.AddSingleton<AgentRegistry>();
         services.AddSingleton<TownDirectory>();

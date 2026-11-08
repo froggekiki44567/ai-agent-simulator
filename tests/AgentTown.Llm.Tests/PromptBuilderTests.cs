@@ -61,6 +61,16 @@ public class PromptBuilderTests
     }
 
     [Fact]
+    public void Known_people_appear_only_when_present()
+    {
+        new PromptBuilder().Build(Context()).User.Should().NotContain("People you know");
+
+        var prompt = new PromptBuilder().Build(Context(b => b.KnownPeople = ["Petras: an acquaintance who owes you 20.00 EUR (last met day 1, 12:00)"]));
+
+        prompt.User.Should().Contain("People you know (not here):\n- Petras: an acquaintance who owes you 20.00 EUR");
+    }
+
+    [Fact]
     public void Numbers_do_not_depend_on_machine_culture()
     {
         var previous = Thread.CurrentThread.CurrentCulture;
@@ -82,6 +92,7 @@ public class PromptBuilderTests
         public IReadOnlyDictionary<string, int> Inventory { get; set; } = new Dictionary<string, int> { ["bread"] = 2 };
         public IReadOnlyList<string> Memories { get; set; } = [];
         public IReadOnlyList<string> Events { get; set; } = [];
+        public IReadOnlyList<string> KnownPeople { get; set; } = [];
 
         public AgentPromptContext Build() => new()
         {
@@ -107,6 +118,7 @@ public class PromptBuilderTests
             Situation = "You are hungry.",
             Memories = Memories,
             RecentEvents = Events,
+            KnownPeople = KnownPeople,
         };
     }
 }

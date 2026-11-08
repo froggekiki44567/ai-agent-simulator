@@ -1,6 +1,8 @@
 using AgentTown.Agents.Conversations;
 using AgentTown.Agents.Loop;
+using AgentTown.Agents.Memory;
 using AgentTown.Agents.Planning;
+using AgentTown.Agents.Relationships;
 using AgentTown.Agents.State;
 using AgentTown.Agents.Telemetry;
 using AgentTown.Contracts.Events;
@@ -26,6 +28,12 @@ internal sealed class LoopHarness : IDisposable
     public AgentTelemetry Telemetry { get; } = new();
     public LlmScheduler Scheduler { get; }
     public ConversationService Conversations { get; }
+    public MemoryOptions MemoryOptions { get; } = new();
+    public InMemoryMemoryStore Memories { get; }
+    public MemoryWriter MemoryWriter { get; }
+    public MemoryRetriever MemoryRetriever { get; }
+    public InMemoryRelationshipStore RelationshipStore { get; } = new();
+    public RelationshipService Relationships { get; }
     public AgentLoop Loop { get; }
 
     public LoopHarness(int maxLlmCallsPerTick = 4, int pendingTimeoutTicks = 80, InterestingMomentOptions? moments = null, ConversationOptions? conversations = null)
@@ -36,17 +44,23 @@ internal sealed class LoopHarness : IDisposable
             .AddBuilding(new("park-1", "Park", 0, 0))
             .AddJob(new JobInfo("job-baker", "bakery-1", 8, 16));
 
+        Memories = new InMemoryMemoryStore(MemoryOptions);
+        MemoryWriter = new MemoryWriter(Memories, Llm, MemoryOptions, NullLogger<MemoryWriter>.Instance);
+        MemoryRetriever = new MemoryRetriever(Memories, Llm, MemoryOptions, NullLogger<MemoryRetriever>.Instance);
+
+        Relationships = new RelationshipService(RelationshipStore, new RelationshipOptions(), NullLogger<RelationshipService>.Instance, Registry);
+
         Scheduler = new LlmScheduler(Llm, new LlmOptions { MaxCallsPerTick = maxLlmCallsPerTick, TimeoutSeconds = 5 }, LlmMetrics);
         var decisions = new AgentDecisionService(
             new RuleBasedPlanner(new PlannerOptions()),
             new InterestingMomentDetector(moments ?? new InterestingMomentOptions()),
-            Scheduler, new PromptBuilder(), new DecisionParser(), LlmMetrics);
+            Scheduler, new PromptBuilder(), new DecisionParser(), LlmMetrics, MemoryRetriever, Relationships);
 
         Conversations = new ConversationService(Scheduler, new ConversationPromptBuilder(), new ConversationReplyParser(),
-            Publisher, conversations ?? new ConversationOptions(), NullLogger<ConversationService>.Instance);
+            Publisher, conversations ?? new ConversationOptions(), NullLogger<ConversationService>.Instance, MemoryRetriever, Relationships);
 
         Loop = new AgentLoop(Registry, Town, Needs, decisions, Conversations, Scheduler, Publisher, Telemetry,
-            new AgentLoopOptions { PendingTimeoutTicks = pendingTimeoutTicks }, NullLogger<AgentLoop>.Instance);
+            new AgentLoopOptions { PendingTimeoutTicks = pendingTimeoutTicks }, NullLogger<AgentLoop>.Instance, MemoryWriter, Relationships);
     }
 
     public static TickOccurred Tick(long tick)
