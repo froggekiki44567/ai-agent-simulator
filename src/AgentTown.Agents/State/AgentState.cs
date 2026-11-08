@@ -67,10 +67,35 @@ public sealed class AgentState
         if (delta.Status is { } status) Status = status;
     }
 
+    /// <summary>
+    /// Updates the carried items after World confirmed a Buy, Sell or Eat.
+    /// (<see cref="AgentStateDelta"/> has no inventory field, so the confirmed action is the source.)
+    /// </summary>
+    public void ApplyInventoryChange(ActionType action, string? itemId, int quantity)
+    {
+        if (itemId is null || quantity <= 0)
+            return;
+
+        var change = action switch
+        {
+            ActionType.Buy => quantity,
+            ActionType.Sell or ActionType.Eat => -quantity,
+            _ => 0,
+        };
+        if (change == 0)
+            return;
+
+        var newCount = Math.Max(0, ItemCount(itemId) + change);
+        if (newCount == 0)
+            Inventory.Remove(itemId);
+        else
+            Inventory[itemId] = newCount;
+    }
+
     public static double ClampNeed(double value) => Math.Clamp(value, MinNeed, MaxNeed);
 }
 
 public sealed record AgentPersonality(IReadOnlyList<string> Traits, string Goal, string SpeakingStyle);
 
 /// <summary>An action that was sent to World and is waiting for its result.</summary>
-public sealed record PendingAction(Guid RequestId, ActionType Type, string? TargetId, long RequestedAtTick);
+public sealed record PendingAction(Guid RequestId, ActionType Type, string? TargetId, long RequestedAtTick, string? ItemId = null, int Quantity = 0);
